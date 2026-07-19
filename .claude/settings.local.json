@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest Community --template expo-template-blank-typescript)",
+      "Bash(npm install:*)",
+      "Bash(npm init:*)",
+      "Bash(tree:*)",
+      "Bash(npx expo start:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx expo:*)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(test:*)",
+      "Bash(firebase auth:export:*)",
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "Bash(rm -f DEPLOYMENT_GUIDE.md ENHANCEMENTS_SUMMARY.md PARTNER_DASHBOARD_GUIDE.md PARTNER_DASHBOARD_SUMMARY.md SETUP_PARTNER_ROLE.md STARTUP_CHECKLIST.md SYSTEM_FIXES.md TESTING_101.md TESTING_WALKTHROUGH.md)",
+      "Bash(rm -f PARTNER_DASHBOARD_GUIDE.pdf PARTNER_DASHBOARD_SUMMARY.pdf STARTUP_CHECKLIST.pdf TESTING_101.pdf TESTING_WALKTHROUGH.pdf)",
+      "Bash(pnpm --version)",
+      "Bash(git init *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm list *)",
+      "Bash(pnpm turbo *)",
+      "Bash(pnpm --filter @community/mobile type-check)",
+      "Bash(pnpm --filter @community/partner-dashboard type-check)",
+      "Bash(pnpm --filter @community/admin-dashboard exec next --version)",
+      "Bash(pnpm --filter @community/partner-dashboard exec next --version)",
+      "Bash(pnpm --filter @community/mobile exec expo --version)",
+      "Bash(pnpm --filter @community/types build)",
+      "Bash(pnpm --filter @community/firebase build)",
+      "Bash(pnpm --filter @community/ui build)",
+      "Bash(xargs -I{} echo \"Mobile error count: {}\")"
+    ]
+  }
+}

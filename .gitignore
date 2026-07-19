@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+.expo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Firebase
+.firebaserc
+serviceAccountKey.json
+*-service-account*.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Misc
+*.tsbuildinfo
+.eslintcache

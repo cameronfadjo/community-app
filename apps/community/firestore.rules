@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isApproved(userId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(userId)).data.moderationStatus == 'approved';
+    }
+
+    function isPartner() {
+      return isAuthenticated() && request.auth.token.role == 'partner';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+
+    function isPartnerOrAdmin() {
+      return isPartner() || isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can always read their own profile, others can only read approved profiles
+      // Partners can read all users for moderation
+      allow read: if isOwner(userId) ||
+                     resource.data.moderationStatus == 'approved' ||
+                     isPartnerOrAdmin();
+
+      // Users can create their own profile
+      allow create: if isOwner(userId) &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.moderationStatus == 'pending';
+
+      // Users can update their own profile (but not moderation status)
+      // Partners can update any user's moderation status and verified flag
+      allow update: if (isOwner(userId) &&
+                        request.resource.data.moderationStatus == resource.data.moderationStatus) ||
+                       isPartnerOrAdmin();
+    }
+
+    // Venues collection
+    match /venues/{venueId} {
+      // Allow reading individual approved venues OR listing approved venues via queries
+      // Partners can read all venues for moderation
+      allow get: if resource.data.moderationStatus == 'approved' || isPartnerOrAdmin();
+      allow list: if true; // The query itself filters by moderationStatus, or partners can see all
+
+      // TEMPORARY: Allow creating/updating venues with submittedBy == 'system' for seeding
+      // TODO: Remove this rule after seeding is complete
+      allow create: if request.resource.data.submittedBy == 'system' ||
+                       (isApproved(request.auth.uid) &&
+                        request.resource.data.submittedBy == request.auth.uid &&
+                        request.resource.data.moderationStatus == 'pending');
+
+      // Venue submitters can update their own venues (but not moderation status or ratings)
+      // Partners can update any venue (including moderation status and featured flag)
+      allow update: if (isOwner(resource.data.submittedBy) &&
+                        request.resource.data.moderationStatus == resource.data.moderationStatus &&
+                        request.resource.data.rating == resource.data.rating &&
+                        request.resource.data.reviewCount == resource.data.reviewCount) ||
+                       isPartnerOrAdmin();
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+
+      // Authenticated, approved users can create reviews
+      allow create: if isApproved(request.auth.uid) &&
+                       request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own reviews
+      allow update: if isOwner(resource.data.userId);
+
+      // Users can delete their own reviews, or partners can delete any review
+      allow delete: if isOwner(resource.data.userId) || isPartnerOrAdmin();
+    }
+
+    // Check-ins collection
+    match /checkIns/{checkInId} {
+      // Public check-ins are readable by all
+      // Friends check-ins would require a friends collection (future enhancement)
+      // Private check-ins only by owner
+      allow read: if resource.data.visibility == 'public' ||
+                     isOwner(resource.data.userId);
+
+      // Authenticated, approved users can create check-ins
+      allow create: if isApproved(request.auth.uid) &&
+                       request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own check-ins
+      allow update: if isOwner(resource.data.userId);
+
+      // Users can delete their own check-ins
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Admin collection (moderation)
+    match /admin/{document=**} {
+      // Only admin users can access (implement custom claims in Cloud Functions)
+      allow read, write: if false; // Managed through Cloud Functions only
+    }
+  }
+}

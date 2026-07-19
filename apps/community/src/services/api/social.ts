@@ -1,0 +1,196 @@
+import { CheckIn, CheckInFormData } from '../../types';
+import {
+  COLLECTIONS,
+  createDocument,
+  readDocument,
+  updateDocument,
+  deleteDocument,
+  queryDocuments,
+  where,
+  orderBy,
+  limit,
+} from '../firebase/firestore';
+import { getCurrentUser } from '../firebase/auth';
+import { getUserProfile } from './users';
+import { getVenue } from './venues';
+
+/**
+ * Create a new check-in
+ */
+export const createCheckIn = async (
+  venueId: string,
+  checkInData: CheckInFormData
+): Promise<string> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    throw new Error('User must be authenticated to check in');
+  }
+
+  // Get user profile for denormalized data
+  const userProfile = await getUserProfile(currentUser.uid);
+  if (!userProfile) {
+    throw new Error('User profile not found');
+  }
+
+  // Get venue for denormalized data
+  const venue = await getVenue(venueId);
+  if (!venue) {
+    throw new Error('Venue not found');
+  }
+
+  // Generate a unique ID for the check-in
+  const checkInId = `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const checkIn: Omit<CheckIn, 'createdAt'> = {
+    id: checkInId,
+    userId: currentUser.uid,
+    userName: userProfile.displayName,
+    userPhotoURL: userProfile.photoURL,
+    venueId,
+    venueName: venue.name,
+    venueCategory: venue.category,
+    caption: checkInData.caption,
+    images: checkInData.images,
+    visibility: checkInData.visibility,
+    likes: 0,
+    likedBy: [],
+  };
+
+  await createDocument(COLLECTIONS.CHECK_INS, checkInId, checkIn);
+  return checkInId;
+};
+
+/**
+ * Get a check-in by ID
+ */
+export const getCheckIn = async (checkInId: string): Promise<CheckIn | null> => {
+  return await readDocument<CheckIn>(COLLECTIONS.CHECK_INS, checkInId);
+};
+
+/**
+ * Update a check-in
+ */
+export const updateCheckIn = async (
+  checkInId: string,
+  updates: Partial<CheckInFormData>
+): Promise<void> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    throw new Error('User must be authenticated');
+  }
+
+  const checkIn = await getCheckIn(checkInId);
+  if (!checkIn) {
+    throw new Error('Check-in not found');
+  }
+
+  if (checkIn.userId !== currentUser.uid) {
+    throw new Error('You can only update your own check-ins');
+  }
+
+  await updateDocument(COLLECTIONS.CHECK_INS, checkInId, updates);
+};
+
+/**
+ * Delete a check-in
+ */
+export const deleteCheckIn = async (checkInId: string): Promise<void> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    throw new Error('User must be authenticated');
+  }
+
+  const checkIn = await getCheckIn(checkInId);
+  if (!checkIn) {
+    throw new Error('Check-in not found');
+  }
+
+  if (checkIn.userId !== currentUser.uid) {
+    throw new Error('You can only delete your own check-ins');
+  }
+
+  await deleteDocument(COLLECTIONS.CHECK_INS, checkInId);
+};
+
+/**
+ * Get public check-ins (social feed)
+ */
+export const getPublicCheckIns = async (limitCount: number = 20): Promise<CheckIn[]> => {
+  return await queryDocuments<CheckIn>(COLLECTIONS.CHECK_INS, [
+    where('visibility', '==', 'public'),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount),
+  ]);
+};
+
+/**
+ * Get check-ins by a user
+ */
+export const getUserCheckIns = async (userId: string): Promise<CheckIn[]> => {
+  return await queryDocuments<CheckIn>(COLLECTIONS.CHECK_INS, [
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc'),
+  ]);
+};
+
+/**
+ * Get check-ins for a venue
+ */
+export const getVenueCheckIns = async (venueId: string): Promise<CheckIn[]> => {
+  return await queryDocuments<CheckIn>(COLLECTIONS.CHECK_INS, [
+    where('venueId', '==', venueId),
+    where('visibility', '==', 'public'),
+    orderBy('createdAt', 'desc'),
+  ]);
+};
+
+/**
+ * Like a check-in
+ */
+export const likeCheckIn = async (checkInId: string): Promise<void> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    throw new Error('User must be authenticated');
+  }
+
+  const checkIn = await getCheckIn(checkInId);
+  if (!checkIn) {
+    throw new Error('Check-in not found');
+  }
+
+  const likedBy = checkIn.likedBy || [];
+
+  // Toggle like status
+  if (likedBy.includes(currentUser.uid)) {
+    // Unlike
+    const updatedLikedBy = likedBy.filter((uid) => uid !== currentUser.uid);
+    await updateDocument(COLLECTIONS.CHECK_INS, checkInId, {
+      likes: Math.max(0, checkIn.likes - 1),
+      likedBy: updatedLikedBy,
+    });
+  } else {
+    // Like
+    likedBy.push(currentUser.uid);
+    await updateDocument(COLLECTIONS.CHECK_INS, checkInId, {
+      likes: checkIn.likes + 1,
+      likedBy,
+    });
+  }
+};
+
+/**
+ * Check if current user liked a check-in
+ */
+export const isCheckInLiked = async (checkInId: string): Promise<boolean> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    return false;
+  }
+
+  const checkIn = await getCheckIn(checkInId);
+  if (!checkIn) {
+    return false;
+  }
+
+  return checkIn.likedBy?.includes(currentUser.uid) || false;
+};

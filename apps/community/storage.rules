@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidImageSize() {
+      // Max 5MB
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // User profile photos
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) &&
+                      isValidImageType() &&
+                      isValidImageSize();
+    }
+
+    // Venue images
+    match /venues/{venueId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() &&
+                      isValidImageType() &&
+                      isValidImageSize();
+    }
+
+    // Review images
+    match /reviews/{reviewId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() &&
+                      isValidImageType() &&
+                      isValidImageSize();
+    }
+
+    // Check-in images
+    match /checkIns/{userId}/{checkInId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) &&
+                      isValidImageType() &&
+                      isValidImageSize();
+    }
+  }
+}
