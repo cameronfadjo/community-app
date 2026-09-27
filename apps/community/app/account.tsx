@@ -28,7 +28,7 @@ const PROMISES: Array<{ icon: IconName; title: string; detail: string }> = [
   {
     icon: 'ticket-confirmation-outline',
     title: 'Perks are remembered',
-    detail: 'We keep a record of perks you unlock, so each one is used once.',
+    detail: 'We keep a record of perks you unlock, so each one is used once. Venues see totals, never who.',
   },
 ];
 
@@ -43,7 +43,7 @@ const formatDay = (ms: number): string =>
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { user, profile, isEmailVerified, signOut, loading } = useAuth();
+  const { user, profile, isEmailVerified, signOut, deleteAccount, loading } = useAuth();
   const usingSampleData = useEventStore((state) => state.usingSampleData);
   const { perks, loadMine } = usePerkStore();
 
@@ -51,6 +51,8 @@ export default function AccountScreen() {
   const [nowMs] = useState(Date.now());
   const [notice, setNotice] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadMine({ userId, sample: usingSampleData }).catch((e) =>
@@ -74,6 +76,22 @@ export default function AccountScreen() {
     } catch (e) {
       console.error('[Account] Error signing out:', e);
       setNotice("We couldn't sign you out. Try again.");
+    }
+  };
+
+  const handleDelete = async () => {
+    setNotice(null);
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      usePerkStore.setState({ perks: {} });
+      close();
+    } catch (e: any) {
+      console.error('[Account] Error deleting account:', e);
+      setNotice(e.message || "We couldn't delete your account. Try again.");
+      setConfirmingDelete(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -220,8 +238,49 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {user && (
-          <Button title="Sign out" variant="outline" onPress={handleSignOut} loading={loading} fullWidth />
+        {user && !confirmingDelete && (
+          <View style={styles.accountActions}>
+            <Button
+              title="Sign out"
+              variant="outline"
+              onPress={handleSignOut}
+              loading={loading}
+              fullWidth
+            />
+            <Button
+              title="Delete my account"
+              variant="text"
+              onPress={() => setConfirmingDelete(true)}
+              textStyle={styles.deleteText}
+              fullWidth
+            />
+          </View>
+        )}
+
+        {user && confirmingDelete && (
+          <View style={[styles.card, styles.deleteCard]} accessibilityRole="alert">
+            <Text style={styles.name}>Delete your account?</Text>
+            <Text style={styles.signedOutText}>
+              This removes your sign-in, your name and email, and your record of perks. It can't be
+              undone. You can keep browsing without an account.
+            </Text>
+            <View style={styles.actions}>
+              <Button
+                title="Delete my account"
+                onPress={handleDelete}
+                loading={deleting}
+                style={styles.deleteButton}
+                fullWidth
+              />
+              <Button
+                title="Keep my account"
+                variant="outline"
+                onPress={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                fullWidth
+              />
+            </View>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -387,6 +446,18 @@ const styles = StyleSheet.create({
   },
   rowStateActive: {
     color: COLORS.accent,
+  },
+  accountActions: {
+    gap: 4,
+  },
+  deleteText: {
+    color: COLORS.error,
+  },
+  deleteCard: {
+    borderColor: COLORS.error,
+  },
+  deleteButton: {
+    backgroundColor: COLORS.error,
   },
   promise: {
     flexDirection: 'row',

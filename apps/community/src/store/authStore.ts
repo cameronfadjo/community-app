@@ -6,6 +6,7 @@ import {
   signInWithEmail,
   signInWithGoogle,
   signOut,
+  deleteAccount,
   resetPassword,
   getCurrentUser as getFirebaseUser,
 } from '../services/firebase/auth';
@@ -31,6 +32,7 @@ interface AuthState {
   signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
   refreshUserProfile: () => Promise<void>;
@@ -208,6 +210,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       await signOut();
+
+      set({
+        firebaseUser: null,
+        userProfile: null,
+        loading: false,
+        error: null,
+      });
+    } catch (error: any) {
+      set({
+        loading: false,
+        error: error.message,
+      });
+      throw error;
+    }
+  },
+
+  // Delete the account and everything tied to it
+  deleteAccount: async () => {
+    set({ loading: true, error: null });
+
+    try {
+      await deleteAccount();
 
       set({
         firebaseUser: null,

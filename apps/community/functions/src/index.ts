@@ -11,5 +11,7 @@ export { moderateUser, moderateVenue } from './moderation';
 export { onReviewCreate } from './reviews/onReviewCreate';
 export { onReviewUpdate } from './reviews/onReviewUpdate';
 export { onReviewDelete } from './reviews/onReviewDelete';
+export { onPerkRedemptionWrite } from './perks/onPerkRedemptionWrite';
+export { deleteMyAccount } from './account/deleteMyAccount';
 export { setAdminClaim } from './admin/setAdminClaim';
 export { setPartnerClaim } from './admin/setPartnerClaim';

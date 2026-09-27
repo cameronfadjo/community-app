@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
+    "test": "vitest run",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
@@ -20,8 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "firebase-functions-test": "^3.0.0",
     "typescript": "^5.0.0",
-    "firebase-functions-test": "^3.0.0"
+    "vitest": "^4.1.11"
   },
   "private": true
 }

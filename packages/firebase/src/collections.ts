@@ -8,6 +8,7 @@ export const COLLECTIONS = {
   EVENTS: 'events',
   ACTIVITIES: 'activities',
   PERK_REDEMPTIONS: 'perkRedemptions',
+  EVENT_STATS: 'eventStats',
   REVIEWS: 'reviews',
   CHECK_INS: 'checkIns',
   OFFERS: 'offers',

@@ -2,12 +2,14 @@ import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from '
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getFunctions, type Functions } from 'firebase/functions';
 
 export interface FirebaseClient {
   app: FirebaseApp;
   auth: Auth;
   db: Firestore;
   storage: FirebaseStorage;
+  functions: Functions;
 }
 
 /**
@@ -39,5 +41,6 @@ export function createFirebaseClient(config: FirebaseOptions): FirebaseClient {
     auth: getAuth(app),
     db: getFirestore(app),
     storage: getStorage(app),
+    functions: getFunctions(app),
   };
 }

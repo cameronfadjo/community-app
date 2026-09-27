@@ -61,8 +61,6 @@ export const unlockPerk = async (event: EventListing, userId: string): Promise<P
     id: ref.id,
     eventId: event.id,
     userId,
-    organizerId: event.organizerId,
-    venueId: event.venueId,
     perkLabel: event.perkLabel,
     eventTitle: event.title,
     venueName: event.venueName,

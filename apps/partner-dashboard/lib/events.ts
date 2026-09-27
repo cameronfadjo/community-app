@@ -21,7 +21,7 @@ import {
   type ActivitySeed,
   type EventFormData,
   type EventListing,
-  type PerkRedemption,
+  type EventStats,
   type Venue,
 } from '@community/types';
 import { db } from './firebase/config';
@@ -199,20 +199,19 @@ export interface PerkCounts {
   redeemed: number;
 }
 
-/** Perk totals for each of the organizer's events, keyed by event ID */
+/**
+ * Perk totals for each of the organizer's events, keyed by event ID.
+ * These are totals only; who unlocked a perk is never available here.
+ */
 export async function loadPerkCounts(organizerId: string): Promise<Record<string, PerkCounts>> {
   const snapshot = await getDocs(
-    query(collection(db, COLLECTIONS.PERK_REDEMPTIONS), where('organizerId', '==', organizerId)),
+    query(collection(db, COLLECTIONS.EVENT_STATS), where('organizerId', '==', organizerId)),
   );
 
   const counts: Record<string, PerkCounts> = {};
   for (const item of snapshot.docs) {
-    const redemption = item.data() as PerkRedemption;
-    const entry = (counts[redemption.eventId] ??= { unlocked: 0, redeemed: 0 });
-    entry.unlocked += 1;
-    if (redemption.redeemedAt) {
-      entry.redeemed += 1;
-    }
+    const stats = item.data() as EventStats;
+    counts[item.id] = { unlocked: stats.perkUnlocked ?? 0, redeemed: stats.perkRedeemed ?? 0 };
   }
   return counts;
 }

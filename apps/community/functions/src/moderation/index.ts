@@ -1,6 +1,12 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
+const assertIsAdmin = (context: functions.https.CallableContext) => {
+  if (context.auth?.token.role !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
+  }
+};
+
 /**
  * Cloud Function for admins to moderate user profiles
  * Callable function that requires admin privileges
@@ -11,11 +17,9 @@ export const moderateUser = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  // TODO: Verify the caller has admin privileges
-  // This would require setting custom claims on admin users
-  // For now, we'll assume the caller is an admin
+  assertIsAdmin(context);
 
-  const { userId, status, reason } = data;
+  const { userId, status } = data;
 
   if (!userId || !status) {
     throw new functions.https.HttpsError('invalid-argument', 'Missing required parameters');
@@ -55,9 +59,9 @@ export const moderateVenue = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  // TODO: Verify the caller has admin privileges
+  assertIsAdmin(context);
 
-  const { venueId, status, reason } = data;
+  const { venueId, status } = data;
 
   if (!venueId || !status) {
     throw new functions.https.HttpsError('invalid-argument', 'Missing required parameters');
