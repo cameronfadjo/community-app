@@ -7,6 +7,7 @@ import {
   describeRecurrence,
   expandMonthlyRecurrence,
   filterEventsInWindow,
+  formatMinimumAge,
   getTodayLabel,
   expandWeeklyRecurrence,
   formatDistanceLabel,
@@ -138,6 +139,18 @@ describe('activities', () => {
       expect(activity.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(ACTIVITY_COLORS).toContain(activity.color);
     }
+  });
+});
+
+describe('formatMinimumAge', () => {
+  it('shows the age with a plus', () => {
+    expect(formatMinimumAge(18)).toBe('18+');
+    expect(formatMinimumAge(21)).toBe('21+');
+  });
+
+  it('never shows an event as open to under-18s, whatever was stored', () => {
+    expect(formatMinimumAge(0)).toBe('18+');
+    expect(formatMinimumAge(undefined)).toBe('18+');
   });
 });
 
@@ -292,7 +305,7 @@ describe('rankEventsForPick', () => {
       firstTimersWelcome: false,
       alcoholFree: false,
       stepFreeEntry: false,
-      minimumAge: 0 as const,
+      minimumAge: 18 as const,
     },
   };
   const at = (minutesFromNow: number, durationMinutes = 120) => ({

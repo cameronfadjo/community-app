@@ -5,6 +5,7 @@ import {
   MAX_ACTIVITIES_PER_EVENT,
   MAX_DESCRIPTION_LENGTH,
   MAX_TITLE_LENGTH,
+  MINIMUM_AGES,
   buildEventOccurrences,
   describeRecurrence,
   parseCoverToCents,
@@ -43,7 +44,6 @@ const TAG_OPTIONS = [
 type TagKey = (typeof TAG_OPTIONS)[number]['key'];
 
 const AGE_OPTIONS: Array<{ value: MinimumAge; label: string }> = [
-  { value: 0, label: 'All ages' },
   { value: 18, label: '18+' },
   { value: 21, label: '21+' },
 ];
@@ -129,7 +129,10 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
     alcoholFree: initial?.tags.alcoholFree ?? false,
     stepFreeEntry: initial?.tags.stepFreeEntry ?? false,
   });
-  const [minimumAge, setMinimumAge] = useState<MinimumAge>(initial?.tags.minimumAge ?? 21);
+  // An event saved before all-ages was removed falls back to 21+
+  const [minimumAge, setMinimumAge] = useState<MinimumAge>(
+    MINIMUM_AGES.find((age) => age === initial?.tags.minimumAge) ?? 21,
+  );
   const [audience, setAudience] = useState(initial?.audience.join(', ') ?? '');
 
   const [errors, setErrors] = useState<EventFormErrors>({});
@@ -477,7 +480,11 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
           ))}
         </div>
 
-        <Field label="Minimum age">
+        <Field
+          label="Minimum age"
+          hint="Every event is for adults. ID is still checked at the door."
+          error={errors.tags}
+        >
           <div className="flex gap-2" role="radiogroup" aria-label="Minimum age">
             {AGE_OPTIONS.map((option) => (
               <button

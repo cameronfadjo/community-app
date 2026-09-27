@@ -7,6 +7,7 @@ import {
   resolveEventTimes,
   validateEventForm,
 } from './event-form';
+import type { MinimumAge } from './event';
 import type { EventFormData } from './event';
 
 const HOUR = 60 * 60 * 1000;
@@ -173,6 +174,22 @@ describe('buildEventOccurrences', () => {
       new Date(2026, 11, 4, 22, 0),
     ]);
     expect(occurrences.every((o) => o.seriesId === 'series_1')).toBe(true);
+  });
+
+  it('accepts events for 18 and over or 21 and over', () => {
+    for (const minimumAge of [18, 21] as const) {
+      const form = validForm({ tags: { ...validForm().tags, minimumAge } });
+      expect(validateEventForm(form, now).tags).toBeUndefined();
+    }
+  });
+
+  it('turns away events open to under-18s', () => {
+    for (const minimumAge of [0, 13, 17]) {
+      const form = validForm({
+        tags: { ...validForm().tags, minimumAge: minimumAge as unknown as MinimumAge },
+      });
+      expect(validateEventForm(form, now).tags).toBe('Events must be for people 18 and over.');
+    }
   });
 
   it('asks for an end date when the event repeats', () => {

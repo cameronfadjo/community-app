@@ -84,6 +84,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // The app is for adults: every event is 18+ or 21+
+    function isForAdults(event) {
+      return event.tags.minimumAge in [18, 21];
+    }
+
     // Events collection
     match /events/{eventId} {
       // Public: the app is browsable without an account
@@ -92,19 +97,21 @@ service cloud.firestore {
       // Partners post their own events, which publish immediately.
       // Organizers can host at venues they don't own, so venue ownership
       // is not checked here; admins can take an event down.
-      allow create: if isAdmin() ||
-                       (isPartner() &&
-                        request.resource.data.organizerId == request.auth.uid &&
-                        request.resource.data.status == 'scheduled' &&
-                        request.resource.data.activityIds.size() > 0 &&
-                        request.resource.data.endsAt > request.resource.data.startsAt);
+      allow create: if isForAdults(request.resource.data) &&
+                       (isAdmin() ||
+                        (isPartner() &&
+                         request.resource.data.organizerId == request.auth.uid &&
+                         request.resource.data.status == 'scheduled' &&
+                         request.resource.data.activityIds.size() > 0 &&
+                         request.resource.data.endsAt > request.resource.data.startsAt));
 
       // Organizers can edit or cancel their own events, but not hand them to someone else
-      allow update: if isAdmin() ||
-                       (isPartner() &&
-                        resource.data.organizerId == request.auth.uid &&
-                        request.resource.data.organizerId == resource.data.organizerId &&
-                        request.resource.data.endsAt > request.resource.data.startsAt);
+      allow update: if isForAdults(request.resource.data) &&
+                       (isAdmin() ||
+                        (isPartner() &&
+                         resource.data.organizerId == request.auth.uid &&
+                         request.resource.data.organizerId == resource.data.organizerId &&
+                         request.resource.data.endsAt > request.resource.data.startsAt));
 
       allow delete: if isAdmin() ||
                        (isPartner() && resource.data.organizerId == request.auth.uid);
