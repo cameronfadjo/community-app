@@ -13,6 +13,7 @@ Moderation of users, venues, and reviews lives in the admin dashboard
 - **Copy** an event to post it again
 - **Add a perk** to an event and see how many were unlocked and used
 - **Claim events** that were listed for them before they joined
+- **See how people find their events**, as counts with nothing about who
 
 Partners see totals for their perks, never who used them.
 
@@ -91,8 +92,29 @@ The dashboard will be available at `http://localhost:3001`
 | Post an event | `/dashboard/events/new` |
 | Edit an event | `/dashboard/events/<id>` |
 | Claim events | `/dashboard/claim` |
+| Insights | `/dashboard/insights` |
 
 `/dashboard` leads to the events page.
+
+## Insights
+
+What a partner can see, for each event and added up for each venue:
+
+| Number | What it counts |
+|---|---|
+| Views | The event's page was opened |
+| Directions | "Take me there" was tapped |
+| Went for perk | Someone tapped the perk, or came from the Perks tab |
+| Unlocked | Someone arrived and unlocked the perk |
+| Used | Staff pressed and held to redeem it |
+
+The rules that keep it anonymous:
+
+- Counts only. No account, phone, or location is recorded.
+- Each phone counts once per event per day.
+- Times are kept to the day and hour.
+- "When people looked" appears only once there are five views.
+- Partners see their own events only.
 
 ## Common issues
 

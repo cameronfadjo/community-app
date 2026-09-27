@@ -10,6 +10,7 @@ export const COLLECTIONS = {
   PERK_REDEMPTIONS: 'perkRedemptions',
   EVENT_STATS: 'eventStats',
   EVENT_CLAIMS: 'eventClaims',
+  EVENT_SIGNALS: 'eventSignals',
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

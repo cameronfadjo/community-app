@@ -23,6 +23,11 @@ export interface PerkRedemption {
   expiresAt: Timestamp;
   /** Set when staff press and hold to redeem */
   redeemedAt?: Timestamp;
+  /**
+   * When the database deletes this record: thirty days after the event.
+   * The event's totals are kept.
+   */
+  deleteAt?: Timestamp;
 }
 
 /**

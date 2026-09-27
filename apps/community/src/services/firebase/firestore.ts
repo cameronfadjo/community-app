@@ -31,6 +31,7 @@ export const COLLECTIONS = {
   ACTIVITIES: 'activities',
   PERK_REDEMPTIONS: 'perkRedemptions',
   EVENT_STATS: 'eventStats',
+  EVENT_SIGNALS: 'eventSignals',
 } as const;
 
 /**

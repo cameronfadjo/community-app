@@ -16,6 +16,7 @@ import { useEventStore } from '../../src/store/eventStore';
 import { useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { EventWithDistance } from '../../src/services/api/events';
 import { openDirections } from '../../src/utils/location';
+import { countSignal } from '../../src/services/api/signals';
 import { formatClock, formatCover, formatTimingBadge, getTimingFor, isUnconfirmed } from '../../src/utils/events';
 import { formatDistanceLabel, formatMinimumAge, getTodayLabel } from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
@@ -28,7 +29,7 @@ const BUSY_HEADLINES = {
 
 export default function EventDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { forActivity, forEvent } = useActivityLookup();
   const { findEvent, tonightEvents, loaded, loadTonight } = useEventStore();
 
@@ -61,6 +62,19 @@ export default function EventDetailScreen() {
       cancelled = true;
     };
   }, [id, loaded, findEvent]);
+
+  // Counted for the host, with nothing about who looked
+  const eventId = event?.id;
+  const hasPerk = Boolean(event?.perkLabel);
+  useEffect(() => {
+    if (!eventId) {
+      return;
+    }
+    countSignal(eventId, 'view');
+    if (hasPerk && from === 'perks') {
+      countSignal(eventId, 'perkView');
+    }
+  }, [eventId, hasPerk, from]);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
@@ -98,6 +112,7 @@ export default function EventDetailScreen() {
   );
 
   const handleDirections = () => {
+    countSignal(event.id, 'directions');
     const { latitude, longitude } = event.location.coordinates;
     openDirections(latitude, longitude, event.venueName);
   };

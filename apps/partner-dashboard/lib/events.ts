@@ -17,6 +17,7 @@ export const {
   confirmEvent,
   cancelUpcomingInSeries,
   loadPerkCounts,
+  loadSignalDays,
   loadUpcomingEvents,
   createClaim,
   loadMyClaims,

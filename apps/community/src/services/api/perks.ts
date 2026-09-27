@@ -11,6 +11,7 @@ import {
   PERK_WINDOW_MINUTES,
   PerkRedemption,
   RedemptionTimes,
+  getPerkRecordDeleteAtMs,
   getPerkRedemptionId,
 } from '../../types';
 import { db } from '../firebase/config';
@@ -66,6 +67,8 @@ export const unlockPerk = async (event: EventListing, userId: string): Promise<P
     venueName: event.venueName,
     unlockedAt: serverTimestamp(),
     expiresAt,
+    // The database deletes the record then. The event's totals are kept.
+    deleteAt: Timestamp.fromMillis(getPerkRecordDeleteAtMs(event.endsAt.toMillis())),
   });
 
   const saved = await getDoc(ref);
