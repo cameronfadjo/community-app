@@ -4,7 +4,7 @@
  */
 
 import type { EventFormData } from './event';
-import { expandWeeklyRecurrence } from './event-utils';
+import { expandMonthlyRecurrence, expandWeeklyRecurrence } from './event-utils';
 
 export const MAX_TITLE_LENGTH = 80;
 export const MAX_DESCRIPTION_LENGTH = 600;
@@ -137,8 +137,12 @@ export const validateEventForm = (
     errors.ticketUrl = 'Enter a full web address starting with https://';
   }
 
-  if (form.repeatWeeklyUntil && endOfDay(form.repeatWeeklyUntil).getTime() < startMs) {
-    errors.repeatWeeklyUntil = 'The last date must be on or after the first event.';
+  if (form.repeat !== 'none') {
+    if (!form.repeatUntil || Number.isNaN(form.repeatUntil.getTime())) {
+      errors.repeatUntil = 'Choose the last date it repeats.';
+    } else if (endOfDay(form.repeatUntil).getTime() < startMs) {
+      errors.repeatUntil = 'The last date must be on or after the first event.';
+    }
   }
 
   return errors;
@@ -152,23 +156,30 @@ export interface EventOccurrence {
 }
 
 /**
- * The dated occurrences a form produces: one, or one per week when it
- * repeats. Each becomes its own event document.
+ * The dated occurrences a form produces: one, or one per repeat. Each
+ * becomes its own event document.
  */
 export const buildEventOccurrences = (
-  form: Pick<EventFormData, 'startsAt' | 'endsAt' | 'repeatWeeklyUntil'>,
+  form: Pick<EventFormData, 'startsAt' | 'endsAt' | 'repeat' | 'repeatUntil'>,
   createSeriesId: () => string
 ): EventOccurrence[] => {
   const firstStartMs = form.startsAt.getTime();
   const durationMs = form.endsAt.getTime() - firstStartMs;
 
-  if (!form.repeatWeeklyUntil) {
+  if (form.repeat === 'none' || !form.repeatUntil) {
     return [{ startsAtMs: firstStartMs, endsAtMs: firstStartMs + durationMs, seriesId: undefined }];
   }
 
+  const untilMs = endOfDay(form.repeatUntil).getTime();
+  const starts =
+    form.repeat === 'monthly'
+      ? expandMonthlyRecurrence({ firstStartMs, untilMs })
+      : expandWeeklyRecurrence({
+          firstStartMs,
+          untilMs,
+          everyWeeks: form.repeat === 'every_two_weeks' ? 2 : 1,
+        });
+
   const seriesId = createSeriesId();
-  return expandWeeklyRecurrence({
-    firstStartMs,
-    untilMs: endOfDay(form.repeatWeeklyUntil).getTime(),
-  }).map((startsAtMs) => ({ startsAtMs, endsAtMs: startsAtMs + durationMs, seriesId }));
+  return starts.map((startsAtMs) => ({ startsAtMs, endsAtMs: startsAtMs + durationMs, seriesId }));
 };

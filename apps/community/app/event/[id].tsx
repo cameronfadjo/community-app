@@ -17,7 +17,7 @@ import { useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { EventWithDistance } from '../../src/services/api/events';
 import { openDirections } from '../../src/utils/location';
 import { formatClock, formatCover, formatTimingBadge, getTimingFor } from '../../src/utils/events';
-import { formatDistanceLabel } from '../../src/types';
+import { formatDistanceLabel, getTodayLabel } from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 
 const BUSY_HEADLINES = {
@@ -62,7 +62,7 @@ export default function EventDetailScreen() {
     };
   }, [id, loaded, findEvent]);
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'));
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading event..." />;
@@ -73,7 +73,7 @@ export default function EventDetailScreen() {
       <SafeAreaView style={[styles.container, styles.missing]}>
         <Text style={styles.missingTitle}>We couldn't find that event</Text>
         <Text style={styles.missingText}>It may have been cancelled or already happened.</Text>
-        <PrimaryButton title="See what's on" onPress={() => router.replace('/(tabs)/tonight')} />
+        <PrimaryButton title="See what's on" onPress={() => router.replace('/(tabs)/whats-on')} />
       </SafeAreaView>
     );
   }
@@ -89,7 +89,7 @@ export default function EventDetailScreen() {
     event.organizerName ? `Hosted by ${event.organizerName}` : null,
   ].filter((fact): fact is string => Boolean(fact));
 
-  // Other things at the same venue tonight
+  // Other things at the same venue before the night ends
   const alsoHere = tonightEvents.filter(
     (other) =>
       other.id !== event.id &&
@@ -219,7 +219,7 @@ export default function EventDetailScreen() {
 
           {alsoHere.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Also here tonight</Text>
+              <Text style={styles.sectionTitle}>{`Also here ${getTodayLabel(new Date(nowMs))}`}</Text>
               <View style={styles.alsoList}>
                 {alsoHere.map((other) => {
                   const look = forActivity(other.activityIds[0] ?? '');

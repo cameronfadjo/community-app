@@ -46,7 +46,13 @@ const seed = (entries: Array<[id: string, label: string, icon: string]>): Activi
     active: true,
   }));
 
-/** Starting set written by the seed script. Admins add to it from there. */
+/**
+ * Starting set written by the seed script. Admins add to it from there.
+ *
+ * Every activity is somewhere to go and something to do. Services such as
+ * support groups are left out. Pride groups and community centers appear as
+ * the hosts of events under these activities, not as a directory.
+ */
 export const DEFAULT_ACTIVITIES: ActivitySeed[] = seed([
   ['dancing', 'Dancing', 'music'],
   ['drag-shows', 'Drag shows', 'sparkles'],
@@ -72,6 +78,14 @@ export const DEFAULT_ACTIVITIES: ActivitySeed[] = seed([
   ['sports-and-fitness', 'Sports and fitness', 'activity'],
   ['outdoors', 'Outdoors', 'tree'],
   ['supper-clubs', 'Supper clubs', 'utensils'],
-  ['support-groups', 'Support groups', 'life-buoy'],
+  ['community-hangouts', 'Hangouts', 'sofa'],
   ['pride-events', 'Pride events', 'flag'],
+  ['meetups-and-mixers', 'Meetups and mixers', 'handshake'],
+  ['tabletop-and-role-playing', 'Tabletop and role-playing', 'swords'],
+  ['watch-parties', 'Watch parties', 'tv'],
+  ['theater-and-performance', 'Theater and performance', 'masks'],
+  ['markets-and-fairs', 'Markets and fairs', 'store'],
 ]);
+
+/** Activities the seed script switches off if they exist. They are not going out. */
+export const RETIRED_ACTIVITY_IDS = ['support-groups'];

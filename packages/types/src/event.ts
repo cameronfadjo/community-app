@@ -80,6 +80,12 @@ export interface EventListing {
   updatedAt: Timestamp;
 }
 
+/**
+ * How an event repeats. 'monthly' keeps the numbered weekday, such as the
+ * 3rd Saturday. For "1st and 3rd", post two monthly events.
+ */
+export type EventRepeat = 'none' | 'weekly' | 'every_two_weeks' | 'monthly';
+
 /** What the partner dashboard form collects. */
 export interface EventFormData {
   title: string;
@@ -89,8 +95,9 @@ export interface EventFormData {
   organizerName?: string;
   startsAt: Date;
   endsAt: Date;
-  /** When set, the event repeats weekly until this date */
-  repeatWeeklyUntil?: Date;
+  repeat: EventRepeat;
+  /** The last day the event may repeat on. Needed unless `repeat` is 'none' */
+  repeatUntil?: Date;
   coverCents: number;
   ticketUrl?: string;
   images: string[];

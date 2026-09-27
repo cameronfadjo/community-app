@@ -1,4 +1,12 @@
-import { EventListing, EventTiming, getEventTiming } from '../types';
+import {
+  EventListing,
+  EventTiming,
+  HomeScope,
+  TimeWindow,
+  filterEventsInWindow,
+  getEventTiming,
+  getTodayLabel,
+} from '../types';
 
 /** "10:00 PM" in the device's locale */
 export const formatClock = (ms: number): string =>
@@ -9,6 +17,23 @@ const isSameDay = (a: Date, b: Date): boolean =>
 
 export const getTimingFor = (event: EventListing, nowMs: number): EventTiming =>
   getEventTiming(event.startsAt.toMillis(), event.endsAt.toMillis(), nowMs);
+
+/** Events running or starting inside the window, in the order given */
+export const eventsInWindow = <T extends EventListing>(events: T[], window: TimeWindow): T[] =>
+  filterEventsInWindow(
+    events.map((event) => ({
+      event,
+      startsAtMs: event.startsAt.toMillis(),
+      endsAtMs: event.endsAt.toMillis(),
+    })),
+    window
+  ).map(({ event }) => event);
+
+/** "today", "tonight", or "this week": the stretch of time the home screen is showing */
+export const formatPeriod = (scope: HomeScope, now: Date): string =>
+  scope === 'week' ? 'this week' : getTodayLabel(now);
+
+export const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** "In 18 min · 10:00 PM", "On now · until 2:00 AM", or "Sat · 11:00 AM" */
 export const formatTimingLabel = (event: EventListing, nowMs: number): string => {

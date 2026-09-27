@@ -34,7 +34,7 @@ const getReasons = (event: EventWithDistance): string[] => {
 export default function PickScreen() {
   const router = useRouter();
   const { forEvent } = useActivityLookup();
-  const { tonightEvents, loaded, loadTonight } = useEventStore();
+  const { homeEvents, loaded, loadTonight } = useEventStore();
 
   const [position, setPosition] = useState(0);
   const [nowMs] = useState(Date.now());
@@ -48,17 +48,17 @@ export default function PickScreen() {
   const ranked = useMemo(
     () =>
       rankEventsForPick(
-        tonightEvents.map((event) => ({
+        homeEvents.map((event) => ({
           ...event,
           startsAtMs: event.startsAt.toMillis(),
           endsAtMs: event.endsAt.toMillis(),
         })),
         nowMs
       ),
-    [tonightEvents, nowMs]
+    [homeEvents, nowMs]
   );
 
-  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'));
+  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
   if (!loaded) {
     return <LoadingSpinner fullScreen message="Picking something good..." />;
@@ -70,7 +70,7 @@ export default function PickScreen() {
     return (
       <SafeAreaView style={[styles.container, styles.empty]}>
         <Text style={styles.heading}>Nothing to pick from yet</Text>
-        <Text style={styles.emptyText}>There's nothing on tonight near you. Check back later.</Text>
+        <Text style={styles.emptyText}>There's nothing on near you this week. Check back soon.</Text>
         <PrimaryButton title="Back" onPress={close} variant="secondary" />
       </SafeAreaView>
     );

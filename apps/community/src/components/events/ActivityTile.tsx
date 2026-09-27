@@ -8,12 +8,21 @@ interface ActivityTileProps {
   label: string;
   icon: string;
   color: ActivityColor;
-  /** Events on tonight */
+  /** Events on in the period */
   count: number;
+  /** "today", "tonight", or "this week" */
+  period: string;
   onPress: () => void;
 }
 
-export const ActivityTile: React.FC<ActivityTileProps> = ({ label, icon, color, count, onPress }) => {
+export const ActivityTile: React.FC<ActivityTileProps> = ({
+  label,
+  icon,
+  color,
+  count,
+  period,
+  onPress,
+}) => {
   const palette = ACTIVITY_PALETTE[color];
   const hasEvents = count > 0;
 
@@ -23,14 +32,14 @@ export const ActivityTile: React.FC<ActivityTileProps> = ({ label, icon, color, 
       onPress={onPress}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${hasEvents ? `${count} tonight` : 'none tonight'}`}
+      accessibilityLabel={`${label}, ${hasEvents ? count : 'none'} ${period}`}
     >
       <ActivityIcon icon={icon} color={palette.shade} />
       <View>
         <Text style={styles.label} numberOfLines={3}>
           {label}
         </Text>
-        <Text style={styles.count}>{hasEvents ? `${count} tonight` : 'None tonight'}</Text>
+        <Text style={styles.count}>{`${hasEvents ? count : 'None'} ${period}`}</Text>
       </View>
     </TouchableOpacity>
   );

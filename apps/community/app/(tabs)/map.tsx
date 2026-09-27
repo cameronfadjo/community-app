@@ -7,17 +7,18 @@ import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { getCurrentLocation } from '../../src/utils/location';
-import { getTimingFor } from '../../src/utils/events';
+import { capitalize, formatPeriod, getTimingFor } from '../../src/utils/events';
 import { COLORS, FONTS } from '../../src/constants/theme';
 
 /**
- * Nearest-first list of tonight's events. The interactive map needs native
+ * Nearest-first list of what's on. The interactive map needs native
  * map setup, which isn't done yet, so this tab lists by distance for now.
  */
 export default function MapScreen() {
   const router = useRouter();
   const { forEvent } = useActivityLookup();
-  const { tonightEvents, userLocation, loaded, loadTonight, setUserLocation } = useEventStore();
+  const { homeEvents, homeScope, userLocation, loaded, loadTonight, setUserLocation } =
+    useEventStore();
   const [nowMs] = useState(Date.now());
 
   useEffect(() => {
@@ -28,10 +29,10 @@ export default function MapScreen() {
 
   const nearestFirst = useMemo(
     () =>
-      tonightEvents
+      homeEvents
         .filter((event) => getTimingFor(event, nowMs).state !== 'ended')
         .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity)),
-    [tonightEvents, nowMs]
+    [homeEvents, nowMs]
   );
 
   const handleUseLocation = async () => {
@@ -40,6 +41,8 @@ export default function MapScreen() {
       setUserLocation(location);
     }
   };
+
+  const period = formatPeriod(homeScope, new Date(nowMs));
 
   if (!loaded) {
     return <LoadingSpinner fullScreen message="Finding what's near you..." />;
@@ -51,7 +54,7 @@ export default function MapScreen() {
         <View>
           <Text style={styles.heading}>Near you</Text>
           <Text style={styles.subheading}>
-            {userLocation ? "Tonight's events, nearest first" : "Tonight's events"}
+            {userLocation ? `On ${period}, nearest first` : `On ${period}`}
           </Text>
         </View>
 
@@ -66,7 +69,7 @@ export default function MapScreen() {
 
         {nearestFirst.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Nothing on tonight yet</Text>
+            <Text style={styles.emptyTitle}>{`Nothing on ${period} yet`}</Text>
           </View>
         ) : (
           <View style={styles.list}>

@@ -7,15 +7,19 @@ import { ActivityIcon, EventCard, FilterPill } from '../../src/components/events
 import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { EVERYTHING_ID, useActivityLookup } from '../../src/hooks/useActivityLookup';
-import { EventWithDistance, getEventsInWindow } from '../../src/services/api/events';
-import { EventFilters, WhenOption, getWhenWindow, matchesEventFilters } from '../../src/types';
+import { EventWithDistance } from '../../src/services/api/events';
+import { capitalize, eventsInWindow } from '../../src/utils/events';
+import {
+  EventFilters,
+  WhenOption,
+  getTodayLabel,
+  getWhenWindow,
+  matchesEventFilters,
+} from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 
-const WHEN_OPTIONS: Array<{ value: WhenOption; label: string }> = [
-  { value: 'tonight', label: 'Tonight' },
-  { value: 'tomorrow', label: 'Tomorrow' },
-  { value: 'weekend', label: 'This weekend' },
-];
+// 'tonight' covers the rest of today; its label follows the time of day
+const WHEN_OPTIONS: WhenOption[] = ['tonight', 'tomorrow', 'weekend', 'week'];
 
 type ToggleFilter = 'goodForSolo' | 'alcoholFree' | 'freeEntry' | 'stepFreeEntry';
 
@@ -26,10 +30,10 @@ const TOGGLE_FILTERS: Array<{ key: ToggleFilter; label: string }> = [
   { key: 'stepFreeEntry', label: 'Step-free' },
 ];
 
-const WHEN_SUMMARY: Record<WhenOption, string> = {
-  tonight: 'tonight',
-  tomorrow: 'tomorrow',
-  weekend: 'this weekend',
+const getWhenLabel = (when: WhenOption, now: Date): string => {
+  if (when === 'tonight') return getTodayLabel(now);
+  if (when === 'tomorrow') return 'tomorrow';
+  return when === 'weekend' ? 'this weekend' : 'this week';
 };
 
 export default function ActivityScreen() {
@@ -38,9 +42,11 @@ export default function ActivityScreen() {
   const activityId = id ?? EVERYTHING_ID;
 
   const { forActivity, forEvent } = useActivityLookup();
-  const { tonightEvents, userLocation, usingSampleData, loaded, loadTonight } = useEventStore();
+  const { weekEvents, homeScope, loaded, error, loadTonight } = useEventStore();
 
-  const [when, setWhen] = useState<WhenOption>('tonight');
+  // Until a choice is made, follows what the home screen is showing
+  const [chosenWhen, setWhen] = useState<WhenOption | null>(null);
+  const when: WhenOption = chosenWhen ?? (homeScope === 'week' ? 'week' : 'tonight');
   const [toggles, setToggles] = useState<Record<ToggleFilter, boolean>>({
     goodForSolo: false,
     alcoholFree: false,
@@ -48,9 +54,6 @@ export default function ActivityScreen() {
     stepFreeEntry: false,
   });
   const [adultsOnly18, setAdultsOnly18] = useState(false);
-  const [events, setEvents] = useState<EventWithDistance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [nowMs] = useState(Date.now());
 
   const appearance = forActivity(activityId);
@@ -62,55 +65,15 @@ export default function ActivityScreen() {
     }
   }, [loaded, loadTonight]);
 
-  // The server filters by activity and time; the toggles run on the results
-  useEffect(() => {
-    if (!loaded) {
-      return;
-    }
+  // The week is already loaded, and every choice falls inside it
+  const events: EventWithDistance[] = useMemo(() => {
+    const activityFilter: EventFilters = activityId === EVERYTHING_ID ? {} : { activityId };
+    return eventsInWindow(weekEvents, getWhenWindow(when, new Date(nowMs))).filter((event) =>
+      matchesEventFilters(event, activityFilter)
+    );
+  }, [activityId, when, weekEvents, nowMs]);
 
-    let cancelled = false;
-    const activityFilter: EventFilters =
-      activityId === EVERYTHING_ID ? {} : { activityId };
-
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        let results: EventWithDistance[];
-        if (when === 'tonight' || usingSampleData) {
-          // Tonight is already loaded; sample events only exist for tonight
-          results =
-            when === 'tonight'
-              ? tonightEvents.filter((event) => matchesEventFilters(event, activityFilter))
-              : [];
-        } else {
-          results = await getEventsInWindow(
-            getWhenWindow(when, new Date()),
-            activityFilter,
-            userLocation
-          );
-        }
-        if (!cancelled) {
-          setEvents(results);
-        }
-      } catch (e) {
-        console.error('[Activity] Error loading events:', e);
-        if (!cancelled) {
-          setError("We couldn't load these events. Try again in a moment.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [activityId, when, loaded, tonightEvents, usingSampleData, userLocation]);
+  const loading = !loaded;
 
   const visibleEvents = useMemo(() => {
     const filters: EventFilters = { ...toggles, admitsAge: adultsOnly18 ? 18 : undefined };
@@ -124,7 +87,7 @@ export default function ActivityScreen() {
     setAdultsOnly18(false);
   };
 
-  const summary = loading ? 'Looking...' : `${visibleEvents.length} ${WHEN_SUMMARY[when]}, soonest first`;
+  const summary = loading ? 'Looking...' : `${visibleEvents.length} ${getWhenLabel(when, new Date(nowMs))}, soonest first`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -137,7 +100,7 @@ export default function ActivityScreen() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.back}
-              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'))}
+              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'))}
               accessibilityRole="button"
               accessibilityLabel="Back"
             >
@@ -155,10 +118,10 @@ export default function ActivityScreen() {
             <View style={styles.whenRow}>
               {WHEN_OPTIONS.map((option) => (
                 <FilterPill
-                  key={option.value}
-                  label={option.label}
-                  selected={when === option.value}
-                  onPress={() => setWhen(option.value)}
+                  key={option}
+                  label={capitalize(getWhenLabel(option, new Date(nowMs)))}
+                  selected={when === option}
+                  onPress={() => setWhen(option)}
                   solid
                 />
               ))}
@@ -207,7 +170,7 @@ export default function ActivityScreen() {
           ) : (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>
-                {error ?? `No ${appearance.label.toLowerCase()} ${WHEN_SUMMARY[when]}`}
+                {error ?? `No ${appearance.label.toLowerCase()} ${getWhenLabel(when, new Date(nowMs))}`}
               </Text>
               {!error && (
                 <Text style={styles.emptyText}>

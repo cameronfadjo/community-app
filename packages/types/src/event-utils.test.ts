@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   STARTING_SOON_MINUTES,
+  MIN_EVENTS_FOR_TODAY,
+  chooseHomeScope,
   countEventsByActivity,
+  describeRecurrence,
+  expandMonthlyRecurrence,
+  filterEventsInWindow,
+  getTodayLabel,
   expandWeeklyRecurrence,
   formatDistanceLabel,
   getEventTiming,
@@ -10,7 +16,12 @@ import {
   matchesEventFilters,
   rankEventsForPick,
 } from './event-utils';
-import { ACTIVITY_COLORS, DEFAULT_ACTIVITIES, activityColorForIndex } from './activity';
+import {
+  ACTIVITY_COLORS,
+  DEFAULT_ACTIVITIES,
+  RETIRED_ACTIVITY_IDS,
+  activityColorForIndex,
+} from './activity';
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -127,6 +138,34 @@ describe('activities', () => {
       expect(activity.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(ACTIVITY_COLORS).toContain(activity.color);
     }
+  });
+});
+
+describe('going-out activities', () => {
+  const ids = DEFAULT_ACTIVITIES.map((a) => a.id);
+
+  it('leaves out services, which are not somewhere to go out to', () => {
+    expect(ids).not.toContain('support-groups');
+    expect(RETIRED_ACTIVITY_IDS).toContain('support-groups');
+  });
+
+  it('never lists a retired activity in the starting set', () => {
+    for (const retired of RETIRED_ACTIVITY_IDS) {
+      expect(ids).not.toContain(retired);
+    }
+  });
+
+  it('covers the events community groups and centers host', () => {
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'community-hangouts',
+        'meetups-and-mixers',
+        'tabletop-and-role-playing',
+        'markets-and-fairs',
+        'watch-parties',
+        'theater-and-performance',
+      ])
+    );
   });
 });
 
@@ -316,5 +355,152 @@ describe('rankEventsForPick', () => {
 
   it('returns an empty list when nothing is on', () => {
     expect(rankEventsForPick([], now)).toEqual([]);
+  });
+});
+
+describe('expandMonthlyRecurrence', () => {
+  it('repeats on the same numbered weekday each month', () => {
+    // 3rd Saturday of September 2026
+    const starts = expandMonthlyRecurrence({
+      firstStartMs: new Date(2026, 8, 19, 19, 30).getTime(),
+      untilMs: new Date(2026, 11, 31).getTime(),
+    });
+    expect(starts.map((ms) => new Date(ms))).toEqual([
+      new Date(2026, 8, 19, 19, 30),
+      new Date(2026, 9, 17, 19, 30),
+      new Date(2026, 10, 21, 19, 30),
+      new Date(2026, 11, 19, 19, 30),
+    ]);
+  });
+
+  it('handles the first weekday of the month', () => {
+    // 1st Tuesday of October 2026
+    const starts = expandMonthlyRecurrence({
+      firstStartMs: new Date(2026, 9, 6, 19, 0).getTime(),
+      untilMs: new Date(2026, 11, 31).getTime(),
+    });
+    expect(starts.map((ms) => new Date(ms).getDate())).toEqual([6, 3, 1]);
+  });
+
+  it('treats a fifth weekday as the last one of each month', () => {
+    // 5th Sunday of November 2026 is also its last Sunday
+    const starts = expandMonthlyRecurrence({
+      firstStartMs: new Date(2026, 10, 29, 11, 0).getTime(),
+      untilMs: new Date(2027, 2, 1).getTime(),
+    });
+    expect(starts.map((ms) => new Date(ms))).toEqual([
+      new Date(2026, 10, 29, 11, 0),
+      new Date(2026, 11, 27, 11, 0),
+      new Date(2027, 0, 31, 11, 0),
+      new Date(2027, 1, 28, 11, 0),
+    ]);
+  });
+
+  it('keeps the local time across a daylight saving change', () => {
+    const starts = expandMonthlyRecurrence({
+      firstStartMs: new Date(2026, 9, 17, 19, 30).getTime(),
+      untilMs: new Date(2026, 11, 1).getTime(),
+    });
+    expect(new Date(starts[1]!).getHours()).toBe(19);
+    expect(new Date(starts[1]!).getMinutes()).toBe(30);
+  });
+
+  it('caps the number of instances', () => {
+    const starts = expandMonthlyRecurrence({
+      firstStartMs: new Date(2026, 8, 19, 19, 30).getTime(),
+      untilMs: new Date(2040, 0, 1).getTime(),
+      maxInstances: 6,
+    });
+    expect(starts).toHaveLength(6);
+  });
+});
+
+describe('expandWeeklyRecurrence every two weeks', () => {
+  it('steps by the number of weeks given', () => {
+    const starts = expandWeeklyRecurrence({
+      firstStartMs: new Date(2026, 8, 25, 22, 0).getTime(),
+      untilMs: new Date(2026, 9, 31).getTime(),
+      everyWeeks: 2,
+    });
+    expect(starts.map((ms) => new Date(ms).getDate())).toEqual([25, 9, 23]);
+  });
+});
+
+describe('describeRecurrence', () => {
+  it('describes a weekly repeat', () => {
+    expect(describeRecurrence(new Date(2026, 8, 25, 22, 0), 'weekly')).toBe('Every Friday');
+  });
+
+  it('describes a repeat every two weeks', () => {
+    expect(describeRecurrence(new Date(2026, 8, 25, 22, 0), 'every_two_weeks')).toBe(
+      'Every other Friday'
+    );
+  });
+
+  it('describes a monthly repeat by its numbered weekday', () => {
+    expect(describeRecurrence(new Date(2026, 8, 19, 19, 30), 'monthly')).toBe(
+      'The 3rd Saturday of every month'
+    );
+    expect(describeRecurrence(new Date(2026, 9, 6, 19, 0), 'monthly')).toBe(
+      'The 1st Tuesday of every month'
+    );
+  });
+
+  it('describes a fifth weekday as the last', () => {
+    expect(describeRecurrence(new Date(2026, 10, 29, 11, 0), 'monthly')).toBe(
+      'The last Sunday of every month'
+    );
+  });
+});
+
+describe('getWhenWindow for the week', () => {
+  it('runs from now until the night ends seven days later', () => {
+    const now = new Date(2026, 8, 23, 12, 0);
+    const window = getWhenWindow('week', now);
+    expect(window.startMs).toBe(now.getTime());
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 8, 30, 4, 0));
+  });
+});
+
+describe('filterEventsInWindow', () => {
+  const window = { startMs: 1000, endMs: 2000 };
+
+  it('keeps events that start inside the window', () => {
+    expect(filterEventsInWindow([{ startsAtMs: 1500, endsAtMs: 2500 }], window)).toHaveLength(1);
+  });
+
+  it('keeps events already under way when the window opens', () => {
+    expect(filterEventsInWindow([{ startsAtMs: 500, endsAtMs: 1200 }], window)).toHaveLength(1);
+  });
+
+  it('drops events that ended before the window or start after it', () => {
+    const events = [
+      { startsAtMs: 100, endsAtMs: 1000 },
+      { startsAtMs: 2001, endsAtMs: 3000 },
+    ];
+    expect(filterEventsInWindow(events, window)).toEqual([]);
+  });
+});
+
+describe('chooseHomeScope', () => {
+  it('shows today when enough is on', () => {
+    expect(chooseHomeScope(MIN_EVENTS_FOR_TODAY)).toBe('today');
+  });
+
+  it('widens to the week when today is thin', () => {
+    expect(chooseHomeScope(MIN_EVENTS_FOR_TODAY - 1)).toBe('week');
+    expect(chooseHomeScope(0)).toBe('week');
+  });
+});
+
+describe('getTodayLabel', () => {
+  it('says today during the day and tonight from the evening', () => {
+    expect(getTodayLabel(new Date(2026, 8, 26, 11, 0))).toBe('today');
+    expect(getTodayLabel(new Date(2026, 8, 26, 16, 59))).toBe('today');
+    expect(getTodayLabel(new Date(2026, 8, 26, 17, 0))).toBe('tonight');
+  });
+
+  it('still says tonight in the small hours', () => {
+    expect(getTodayLabel(new Date(2026, 8, 27, 1, 30))).toBe('tonight');
   });
 });

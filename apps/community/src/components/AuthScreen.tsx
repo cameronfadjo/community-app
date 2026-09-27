@@ -25,7 +25,7 @@ interface AuthScreenProps {
 export const AuthScreen: React.FC<AuthScreenProps> = ({ title, subtitle, children }) => {
   const router = useRouter();
 
-  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'));
+  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
   return (
     <SafeAreaView style={styles.container}>

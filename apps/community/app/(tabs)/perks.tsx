@@ -15,7 +15,7 @@ import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 export default function PerksScreen() {
   const router = useRouter();
   const { forEvent } = useActivityLookup();
-  const { tonightEvents, loaded, loadTonight, usingSampleData } = useEventStore();
+  const { weekEvents, loaded, loadTonight, usingSampleData } = useEventStore();
   const { perks, loadMine } = usePerkStore();
   const { user } = useAuth();
   const userId = user?.uid ?? null;
@@ -45,10 +45,10 @@ export default function PerksScreen() {
 
   const withPerks = useMemo(
     () =>
-      tonightEvents.filter(
+      weekEvents.filter(
         (event) => event.perkLabel && getTimingFor(event, nowMs).state !== 'ended'
       ),
-    [tonightEvents, nowMs]
+    [weekEvents, nowMs]
   );
 
   if (!loaded) {
@@ -97,8 +97,8 @@ export default function PerksScreen() {
 
         {withPerks.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No perks tonight yet</Text>
-            <Text style={styles.emptyText}>Venues add them through the evening, so check back.</Text>
+            <Text style={styles.emptyTitle}>No perks this week yet</Text>
+            <Text style={styles.emptyText}>Venues add them through the week, so check back.</Text>
           </View>
         ) : (
           <View style={styles.list}>

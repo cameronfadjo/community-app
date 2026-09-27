@@ -37,11 +37,9 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // Users can always read their own profile, others can only read approved profiles
-      // Partners can read all users for moderation
-      allow read: if isOwner(userId) ||
-                     resource.data.moderationStatus == 'approved' ||
-                     isPartnerOrAdmin();
+      // Nobody has a public profile. A profile holds an email address, so
+      // only its owner and admins can read it.
+      allow read: if isOwner(userId) || isAdmin();
 
       // Users can create their own profile. There is no approval step:
       // accounts start approved, and an admin can reject one to block it.
@@ -50,10 +48,10 @@ service cloud.firestore {
                        request.resource.data.moderationStatus == 'approved';
 
       // Users can update their own profile (but not moderation status)
-      // Partners can update any user's moderation status and verified flag
+      // Only admins can block an account
       allow update: if (isOwner(userId) &&
                         request.resource.data.moderationStatus == resource.data.moderationStatus) ||
-                       isPartnerOrAdmin();
+                       isAdmin();
     }
 
     // Venues collection
@@ -63,12 +61,10 @@ service cloud.firestore {
       allow get: if resource.data.moderationStatus == 'approved' || isPartnerOrAdmin();
       allow list: if true; // The query itself filters by moderationStatus, or partners can see all
 
-      // TEMPORARY: Allow creating/updating venues with submittedBy == 'system' for seeding
-      // TODO: Remove this rule after seeding is complete
-      allow create: if request.resource.data.submittedBy == 'system' ||
-                       (isApproved(request.auth.uid) &&
-                        request.resource.data.submittedBy == request.auth.uid &&
-                        request.resource.data.moderationStatus == 'pending');
+      // Seeding uses the Admin SDK, which skips these rules
+      allow create: if isApproved(request.auth.uid) &&
+                       request.resource.data.submittedBy == request.auth.uid &&
+                       request.resource.data.moderationStatus == 'pending';
 
       // Venue submitters can update their own venues (but not moderation status or ratings)
       // Partners can update any venue (including moderation status and featured flag)

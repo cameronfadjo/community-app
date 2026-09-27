@@ -64,7 +64,7 @@ export default function NotificationsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'));
+  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
   const handleEnable = async (enabled: boolean) => {
     setNotice(null);
