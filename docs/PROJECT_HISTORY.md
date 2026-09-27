@@ -174,6 +174,14 @@ a going-out app: pick an activity, see what's on, go.
 
 Venues and reviews still exist in Firestore and in the dashboards.
 
+### Server functions
+
+- Run on Node.js 22 with `firebase-functions` 7 (first-generation functions)
+- Built automatically before each deploy
+- `setAdminClaim` and `setPartnerClaim` were removed. They relied on a
+  configuration feature that no longer exists, and roles are granted with
+  scripts instead.
+
 ### Still open
 
 - Moderation pages in the partner dashboard should move to the admin dashboard
