@@ -36,8 +36,6 @@ export const useAuth = () => {
   // Computed values
   const isAuthenticated = !!firebaseUser;
   const isEmailVerified = firebaseUser?.emailVerified || false;
-  const isApproved = userProfile?.moderationStatus === 'approved';
-  const isPending = userProfile?.moderationStatus === 'pending';
   const isRejected = userProfile?.moderationStatus === 'rejected';
   const isPremium = userProfile?.subscriptionTier === 'premium';
 
@@ -52,8 +50,6 @@ export const useAuth = () => {
     // Computed
     isAuthenticated,
     isEmailVerified,
-    isApproved,
-    isPending,
     isRejected,
     isPremium,
 

@@ -17,6 +17,12 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(userId)).data.moderationStatus == 'approved';
     }
 
+    // True only for an account an admin has blocked
+    function isRejected(userId) {
+      let profile = /databases/$(database)/documents/users/$(userId);
+      return exists(profile) && get(profile).data.moderationStatus == 'rejected';
+    }
+
     function isPartner() {
       return isAuthenticated() && request.auth.token.role == 'partner';
     }
@@ -37,10 +43,11 @@ service cloud.firestore {
                      resource.data.moderationStatus == 'approved' ||
                      isPartnerOrAdmin();
 
-      // Users can create their own profile
+      // Users can create their own profile. There is no approval step:
+      // accounts start approved, and an admin can reject one to block it.
       allow create: if isOwner(userId) &&
                        request.resource.data.uid == userId &&
-                       request.resource.data.moderationStatus == 'pending';
+                       request.resource.data.moderationStatus == 'approved';
 
       // Users can update their own profile (but not moderation status)
       // Partners can update any user's moderation status and verified flag
@@ -117,6 +124,7 @@ service cloud.firestore {
       // Any signed-in person can unlock a perk for themselves. The ID ties it
       // to one event and one person, and the details must match the event.
       allow create: if isOwner(request.resource.data.userId) &&
+                       !isRejected(request.auth.uid) &&
                        redemptionId == request.resource.data.eventId + '_' + request.auth.uid &&
                        exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
                        matchesEvent(request.resource.data) &&
@@ -160,25 +168,6 @@ service cloud.firestore {
 
       // Users can delete their own reviews, or partners can delete any review
       allow delete: if isOwner(resource.data.userId) || isPartnerOrAdmin();
-    }
-
-    // Check-ins collection
-    match /checkIns/{checkInId} {
-      // Public check-ins are readable by all
-      // Friends check-ins would require a friends collection (future enhancement)
-      // Private check-ins only by owner
-      allow read: if resource.data.visibility == 'public' ||
-                     isOwner(resource.data.userId);
-
-      // Authenticated, approved users can create check-ins
-      allow create: if isApproved(request.auth.uid) &&
-                       request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own check-ins
-      allow update: if isOwner(resource.data.userId);
-
-      // Users can delete their own check-ins
-      allow delete: if isOwner(resource.data.userId);
     }
 
     // Admin collection (moderation)

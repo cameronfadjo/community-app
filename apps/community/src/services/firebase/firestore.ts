@@ -30,12 +30,6 @@ export const COLLECTIONS = {
   EVENTS: 'events',
   ACTIVITIES: 'activities',
   PERK_REDEMPTIONS: 'perkRedemptions',
-  REVIEWS: 'reviews',
-  CHECK_INS: 'checkIns',
-  OFFERS: 'offers',
-  REDEMPTIONS: 'redemptions',
-  ANALYTICS_EVENTS: 'analytics_events',
-  AGGREGATED_ANALYTICS: 'aggregated_analytics',
 } as const;
 
 /**

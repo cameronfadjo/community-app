@@ -42,12 +42,6 @@ export default function TabsLayout() {
         options={{ title: 'Perks', tabBarIcon: tabIcon('ticket-confirmation-outline') }}
       />
 
-      {/* Earlier screens, kept out of the tab bar until they are removed */}
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="favorites" options={{ href: null }} />
-      <Tabs.Screen name="my-offers" options={{ href: null }} />
-      <Tabs.Screen name="social" options={{ href: null }} />
-      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 
 /**
  * Cloud Function triggered when a new user is created
- * Sets the initial moderation status to 'pending'
+ * Accounts start approved; there is no approval step
  */
 export const onUserCreate = functions.auth.user().onCreate(async (user) => {
   const { uid, email, displayName, photoURL } = user;
@@ -17,7 +17,7 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
       photoURL: photoURL || null,
       bio: '',
       verified: false,
-      moderationStatus: 'pending',
+      moderationStatus: 'approved',
       subscriptionTier: 'free',
       favorites: [],
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -25,9 +25,6 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
     });
 
     functions.logger.info(`User document created for ${uid}`);
-
-    // TODO: Send welcome email with moderation notice
-    // TODO: Notify admins of new user pending approval
 
     return { success: true };
   } catch (error) {

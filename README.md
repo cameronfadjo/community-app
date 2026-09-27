@@ -10,7 +10,7 @@ community-platform/
 │   ├── community/          # Expo / React Native consumer app
 │   ├── admin-dashboard/    # Next.js internal admin dashboard
 │   └── partner-dashboard/  # Next.js partner dashboard
-├── packages/               # Shared libraries (added in step 2)
+├── packages/               # Shared types, Firebase helpers, and dashboard UI
 ├── docs/                   # Project documentation
 ├── turbo.json              # Turborepo task pipeline
 ├── pnpm-workspace.yaml     # pnpm workspace definition

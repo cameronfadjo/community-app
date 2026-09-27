@@ -10,6 +10,7 @@
     "test": "echo 'no tests yet' && exit 0",
     "type-check": "tsc --noEmit",
     "seed:activities": "tsx scripts/seed-activities.ts",
+    "set-admin": "tsx scripts/set-admin-role.ts",
     "clean": "rm -rf .next node_modules/.cache"
   },
   "dependencies": {

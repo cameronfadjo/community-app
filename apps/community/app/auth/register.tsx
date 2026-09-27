@@ -78,7 +78,7 @@ export default function RegisterScreen() {
 
       Alert.alert(
         'Account Created!',
-        'Welcome to Community! Please check your email to verify your account. Your profile is pending approval from our moderation team.',
+        'Welcome to Community. Check your email for a link to verify your account.',
         [
           {
             text: 'OK',
@@ -192,13 +192,10 @@ export default function RegisterScreen() {
 
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                📧 You'll receive an email verification link
+                You'll receive an email verification link
               </Text>
               <Text style={styles.infoText}>
-                ⏳ Your profile will be reviewed by our moderation team
-              </Text>
-              <Text style={styles.infoText}>
-                ✅ This helps keep our community safe and welcoming
+                An account is only needed to unlock perks. Browsing stays open to everyone.
               </Text>
             </View>
 

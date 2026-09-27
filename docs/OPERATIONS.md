@@ -7,40 +7,25 @@ Deployment, startup, and role management for the Community App ecosystem.
 ## Quick Start (Local Development)
 
 ### Prerequisites
-- Node.js 18+ (`node --version`)
-- npm (`npm --version`)
-- Expo CLI (`npx expo --version`)
+- Node.js 20+ (`node --version`)
+- pnpm 9+ (`npm install -g pnpm`)
 - Firebase project: `community-86792` (Blaze plan)
 
-### Start All Apps
+### Start the Apps
 
-**Terminal 1 — Community App:**
-```bash
-cd Community
-npm install
-npm start
-# Press 'w' for web (localhost:8081), 'i' for iOS, 'a' for Android
-```
+From the repository root:
 
-**Terminal 2 — Admin Dashboard:**
 ```bash
-cd admin-dashboard
-npm install
-npm run dev
-# http://localhost:3000
-```
+pnpm install
 
-**Terminal 3 — Partner Dashboard:**
-```bash
-cd partner-dashboard
-npm install
-npm run dev
-# http://localhost:3001
+pnpm --filter @community/mobile dev              # Expo; press 'w' for web at localhost:8081
+pnpm --filter @community/admin-dashboard dev     # http://localhost:3000
+pnpm --filter @community/partner-dashboard dev   # http://localhost:3001
 ```
 
 ### Verify Setup
 
-- [ ] Community App: QR code showing, accessible at localhost:8081
+- [ ] Community App: opens to Tonight at localhost:8081 without signing in
 - [ ] Admin Dashboard: Login page at localhost:3000, no console errors
 - [ ] Partner Dashboard: Login page at localhost:3001, no console errors
 - [ ] Firebase connected (login attempt doesn't show "Firebase not initialized")
