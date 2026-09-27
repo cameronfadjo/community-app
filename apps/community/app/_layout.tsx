@@ -11,6 +11,8 @@ import { useAuth } from '../src/hooks';
 import { LoadingSpinner } from '../src/components';
 import { usePerkStore } from '../src/store/perkStore';
 import { useNotificationStore } from '../src/store/notificationStore';
+import { useWelcomeStore } from '../src/store/welcomeStore';
+import { needsAgeConfirmation } from '../src/types';
 import { configureNotifications, onNotificationOpened } from '../src/services/notifications';
 import { COLORS } from '../src/constants/theme';
 
@@ -27,8 +29,27 @@ export default function RootLayout() {
     Nunito_800ExtraBold,
     Nunito_900Black,
   });
+  // If the font fails to load, carry on with the system font
+  const fontsReady = fontsLoaded || !!fontError;
 
-  // Browsing is open to everyone. Signing in is only needed for perks, so the
+  const { confirmedAdult, loaded: welcomeLoaded, load: loadWelcome } = useWelcomeStore();
+
+  useEffect(() => {
+    loadWelcome();
+  }, [loadWelcome]);
+
+  // The app is for adults. Everyone confirms once, the first time it opens.
+  const mustConfirmAge =
+    welcomeLoaded && needsAgeConfirmation({ confirmed: confirmedAdult, firstSegment: segments[0] });
+
+  // Checked on every change of screen, so no redirect or link can slip past
+  useEffect(() => {
+    if (mustConfirmAge && fontsReady) {
+      router.replace('/welcome' as never);
+    }
+  }, [mustConfirmAge, fontsReady, segments]);
+
+  // Browsing needs no account. Signing in is only needed for perks, so the
   // one redirect left is moving signed-in people off the sign-in screens.
   useEffect(() => {
     if (!initialized) {
@@ -54,8 +75,7 @@ export default function RootLayout() {
     });
   }, []);
 
-  // If the font fails to load, carry on with the system font
-  if (!fontsLoaded && !fontError) {
+  if (!fontsReady || !welcomeLoaded) {
     return <LoadingSpinner fullScreen message="Loading Community..." />;
   }
 
@@ -66,11 +86,13 @@ export default function RootLayout() {
         contentStyle: { backgroundColor: COLORS.background },
       }}
     >
+      <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="pick" options={{ presentation: 'modal' }} />
       <Stack.Screen name="account" options={{ presentation: 'modal' }} />
       <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="legal/[doc]" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

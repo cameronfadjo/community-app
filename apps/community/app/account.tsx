@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button } from '../src/components';
+import { Button, LegalLinks } from '../src/components';
 import { useAuth } from '../src/hooks';
 import { useEventStore } from '../src/store/eventStore';
 import { usePerkStore } from '../src/store/perkStore';
@@ -299,6 +299,8 @@ export default function AccountScreen() {
             </View>
           </View>
         )}
+
+        <LegalLinks showAgeStatement />
       </ScrollView>
     </SafeAreaView>
   );

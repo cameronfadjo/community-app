@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthDivider, AuthMessage, AuthScreen, Button, Input } from '../../src/components';
+import {
+  AuthDivider,
+  AuthMessage,
+  AuthScreen,
+  Button,
+  Input,
+  LegalLinkText,
+} from '../../src/components';
 import { useAuth } from '../../src/hooks';
 import { COLORS, FONTS } from '../../src/constants/theme';
 
@@ -125,7 +132,8 @@ export default function LoginScreen() {
       </View>
 
       <Text style={styles.terms}>
-        By signing in, you agree to our Terms of Service and Privacy Policy.
+        By signing in, you agree to our <LegalLinkText document="terms" /> and{' '}
+        <LegalLinkText document="privacy" />.
       </Text>
     </AuthScreen>
   );
@@ -149,8 +157,8 @@ const styles = StyleSheet.create({
   },
   terms: {
     fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 22,
     color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 24,

@@ -17,6 +17,7 @@ import {
 } from '../services/api/users';
 import { auth } from '../services/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 
 interface AuthState {
   // State
@@ -187,7 +188,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch the created profile
-      const profile = await getCurrentUserProfile();
+      let profile = await getCurrentUserProfile();
+
+      // The sign-up form only gets this far once the person has confirmed
+      // they are an adult. Keep a record; sign-up still succeeds without it.
+      if (profile) {
+        try {
+          await updateUserProfile(userCredential.user.uid, { confirmedAdultAt: Timestamp.now() });
+          profile = { ...profile, confirmedAdultAt: Timestamp.now() };
+        } catch (e) {
+          console.error('[Auth] Could not record the age confirmation:', e);
+        }
+      }
 
       set({
         firebaseUser: userCredential.user,
