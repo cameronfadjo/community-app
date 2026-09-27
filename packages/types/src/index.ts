@@ -19,3 +19,4 @@ export * from './event-form';
 export * from './perk';
 export * from './perk-utils';
 export * from './notification-plan';
+export * from './sign-up';

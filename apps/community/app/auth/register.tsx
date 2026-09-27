@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthDivider, AuthMessage, AuthScreen, Button, Input } from '../../src/components';
+import {
+  AuthDivider,
+  AuthMessage,
+  AuthScreen,
+  Button,
+  Checkbox,
+  Input,
+  LegalLinkText,
+} from '../../src/components';
 import { useAuth } from '../../src/hooks';
+import { MINIMUM_USER_AGE, SignUpErrors, validateSignUp } from '../../src/types';
 import { COLORS, FONTS } from '../../src/constants/theme';
+
+const EMPTY_FORM = { displayName: '', email: '', password: '', confirmPassword: '' };
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -13,46 +24,13 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [formErrors, setFormErrors] = useState<{
-    displayName?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-  }>({});
+  // Already confirmed on the welcome screen; shown again so the account carries it
+  const [isAdult, setIsAdult] = useState(true);
+  const [formErrors, setFormErrors] = useState<SignUpErrors>({});
   const [message, setMessage] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
-    const errors: {
-      displayName?: string;
-      email?: string;
-      password?: string;
-      confirmPassword?: string;
-    } = {};
-
-    if (!displayName) {
-      errors.displayName = 'Enter a name';
-    } else if (displayName.length < 2) {
-      errors.displayName = 'Use at least 2 characters';
-    }
-
-    if (!email) {
-      errors.email = 'Enter your email';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = "That doesn't look like an email address";
-    }
-
-    if (!password) {
-      errors.password = 'Choose a password';
-    } else if (password.length < 6) {
-      errors.password = 'Use at least 6 characters';
-    }
-
-    if (!confirmPassword) {
-      errors.confirmPassword = 'Enter your password again';
-    } else if (password !== confirmPassword) {
-      errors.confirmPassword = "The passwords don't match";
-    }
-
+    const errors = validateSignUp({ displayName, email, password, confirmPassword, isAdult });
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -74,6 +52,10 @@ export default function RegisterScreen() {
 
   const handleGoogleSignIn = async () => {
     setMessage(null);
+    if (!isAdult) {
+      setFormErrors({ isAdult: validateSignUp({ ...EMPTY_FORM, isAdult }).isAdult });
+      return;
+    }
     try {
       clearError();
       await signInWithGoogle();
@@ -89,6 +71,16 @@ export default function RegisterScreen() {
       subtitle="It takes a minute, and it's only needed to unlock perks. You have no public profile."
     >
       <AuthMessage message={message} />
+
+      <Checkbox
+        label={`I am ${MINIMUM_USER_AGE} or older`}
+        checked={isAdult}
+        onChange={(checked) => {
+          setIsAdult(checked);
+          setFormErrors((current) => ({ ...current, isAdult: undefined }));
+        }}
+        error={formErrors.isAdult}
+      />
 
       {/* Google sign-in opens a browser popup, which phones don't have */}
       {Platform.OS === 'web' && (
@@ -168,7 +160,8 @@ export default function RegisterScreen() {
       </View>
 
       <Text style={styles.terms}>
-        By creating an account, you agree to our Terms of Service and Privacy Policy.
+        By creating an account, you agree to our <LegalLinkText document="terms" /> and{' '}
+        <LegalLinkText document="privacy" />.
       </Text>
     </AuthScreen>
   );
@@ -190,8 +183,8 @@ const styles = StyleSheet.create({
   },
   terms: {
     fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 22,
     color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 24,

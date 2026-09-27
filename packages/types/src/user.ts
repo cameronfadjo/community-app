@@ -16,6 +16,8 @@ export interface User {
   subscriptionTier: SubscriptionTier;
   /** IDs of venues the user has favorited */
   favorites: string[];
+  /** When the person confirmed at sign-up that they are 18 or older */
+  confirmedAdultAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

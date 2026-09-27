@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  // The app opens straight to what's on; no sign-in needed to browse
+  // No sign-in needed to browse. The root layout shows the welcome screen first
+  // to anyone who hasn't confirmed their age.
   return <Redirect href="/(tabs)/whats-on" />;
 }

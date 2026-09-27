@@ -26,8 +26,8 @@ These facts drive most of the store answers below.
 | Account deletion is in the app, on the Account screen. It calls the `deleteMyAccount` Cloud Function. | `app/account.tsx`, `functions/src/account/deleteMyAccount.ts` |
 | No ads, no analytics SDK, no crash reporting SDK, no in-app purchases. | `apps/community/package.json` |
 | No camera, photo, or microphone permission or plugin is declared. | `apps/community/app.json` |
-| There is no age check in the app. | Searched `app/` and `src/` |
-| There are no Terms or Privacy screens or links in the app. | Searched `app/` and `src/` |
+| The first time the app opens, a welcome screen asks the person to confirm they are 18 or older before anything else can be seen. It is asked once per device and stores only the time of confirming. Sign-up asks again so the account carries it. This is a self-declaration, not age verification. | `app/welcome.tsx`, `app/_layout.tsx`, `app/auth/register.tsx` |
+| Terms and Privacy links are on the sign-in, sign-up, and Account screens. They say "not published yet" until `EXPO_PUBLIC_TERMS_URL` and `EXPO_PUBLIC_PRIVACY_URL` are set to https addresses. | `src/components/LegalLinks.tsx` |
 
 ## Phase 0: decisions that block everything else
 
