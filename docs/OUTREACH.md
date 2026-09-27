@@ -90,7 +90,7 @@ Community hosts, because they run the most recurring events:
 Pride groups and centers are listed as hosts of events people can turn up
 to. Their services are not listed in the app.
 
-None of these has been contacted. Look up each address and its opening
+None of these has been contacted. Check each address and its opening
 hours before you visit. Full lists are in `launch-connecticut/`.
 
 ## Each week, count
