@@ -1,20 +1,21 @@
 /**
- * Reading and writing the signed-in partner's events.
+ * Reading and writing events from the admin dashboard, where an admin can
+ * post for a host and take any event down.
  */
 import { createEventStore } from '@community/firebase';
 import { db } from './firebase/config';
 
-export type { ActivityOption, PerkCounts } from '@community/firebase';
+export type { ActivityOption } from '@community/firebase';
 
 export const {
   loadActivityOptions,
   loadApprovedVenues,
-  loadMyEvents,
+  loadUpcomingEvents,
   loadEvent,
   createEvents,
   updateEvent,
   setEventStatus,
   confirmEvent,
   cancelUpcomingInSeries,
-  loadPerkCounts,
+  confirmUpcomingInSeries,
 } = createEventStore(db);

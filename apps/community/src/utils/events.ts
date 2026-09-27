@@ -5,6 +5,7 @@ import {
   TimeWindow,
   filterEventsInWindow,
   getEventTiming,
+  getHostConfirmation,
   getTodayLabel,
 } from '../types';
 
@@ -17,6 +18,13 @@ const isSameDay = (a: Date, b: Date): boolean =>
 
 export const getTimingFor = (event: EventListing, nowMs: number): EventTiming =>
   getEventTiming(event.startsAt.toMillis(), event.endsAt.toMillis(), nowMs);
+
+/** True when the event was posted for a host who hasn't confirmed the details yet */
+export const isUnconfirmed = (event: EventListing): boolean =>
+  getHostConfirmation({
+    confirmedAtMs: event.confirmedAt?.toMillis(),
+    postedOnBehalfBy: event.postedOnBehalfBy,
+  }) === 'unconfirmed';
 
 /** Events running or starting inside the window, in the order given */
 export const eventsInWindow = <T extends EventListing>(events: T[], window: TimeWindow): T[] =>

@@ -233,8 +233,8 @@ Changes the app needs first. Each is listed because the data requires it.
 | ~~Fall back to "this week" when today is thin~~ Done | About two events a night statewide |
 | Choose a town, and show driving distance | Events are spread across the state |
 | ~~Seed venues from a file~~ Done. Each venue still needs verifying by an admin | Addresses and positions were looked up, not confirmed |
-| Let an admin post events on an organizer's behalf | Organizers don't have accounts yet |
-| Mark seeded events as unconfirmed, with their source | The details are unverified |
+| ~~Let an admin post events on an organizer's behalf~~ Done | Organizers don't have accounts yet |
+| ~~Mark seeded events as unconfirmed, with their source~~ Done | The details are unverified |
 | Let an organizer claim their event, and ask for removal | The directory offers removal to owners; the app should too |
 | ~~New activities~~ Done. Tags from the section above are still to do | The extra detail helps people choose |
 

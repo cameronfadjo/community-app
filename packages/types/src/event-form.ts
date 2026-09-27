@@ -141,6 +141,15 @@ export const validateEventForm = (
     errors.tags = 'Events must be for people 18 and over.';
   }
 
+  if (form.onBehalf) {
+    if (!form.organizerName?.trim()) {
+      errors.organizerName = 'Enter who hosts the event.';
+    }
+    if (!form.onBehalf.detailsSource.trim()) {
+      errors.onBehalf = 'Say where the details came from.';
+    }
+  }
+
   if (form.repeat !== 'none') {
     if (!form.repeatUntil || Number.isNaN(form.repeatUntil.getTime())) {
       errors.repeatUntil = 'Choose the last date it repeats.';
@@ -151,6 +160,18 @@ export const validateEventForm = (
 
   return errors;
 };
+
+export type HostConfirmation = 'confirmed' | 'unconfirmed';
+
+/**
+ * Whether the host stands behind the details. An event is unconfirmed only
+ * when an admin posted it for a host who hasn't confirmed it yet.
+ */
+export const getHostConfirmation = (event: {
+  confirmedAtMs?: number;
+  postedOnBehalfBy?: string;
+}): HostConfirmation =>
+  event.postedOnBehalfBy && event.confirmedAtMs === undefined ? 'unconfirmed' : 'confirmed';
 
 export interface EventOccurrence {
   startsAtMs: number;

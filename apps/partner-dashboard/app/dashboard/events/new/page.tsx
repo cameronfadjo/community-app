@@ -3,10 +3,10 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { EventFormData, EventListing, Venue } from '@/types';
-import { EventForm } from '@/components/EventForm';
+import { EventForm } from '@community/ui';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useToast } from '@/lib/toast';
-import { createEvents, loadEvent } from '@/lib/events';
+import { createEvents, loadActivityOptions, loadApprovedVenues, loadEvent } from '@/lib/events';
 
 function NewEvent() {
   const router = useRouter();
@@ -60,6 +60,8 @@ function NewEvent() {
       </div>
 
       <EventForm
+        loadActivityOptions={loadActivityOptions}
+        loadApprovedVenues={loadApprovedVenues}
         mode="create"
         initial={source}
         submitLabel="Post event"
