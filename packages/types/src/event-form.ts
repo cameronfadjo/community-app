@@ -3,7 +3,7 @@
  * server-side check agree on what a valid event is.
  */
 
-import type { EventFormData } from './event';
+import { MINIMUM_AGES, type EventFormData } from './event';
 import { expandMonthlyRecurrence, expandWeeklyRecurrence } from './event-utils';
 
 export const MAX_TITLE_LENGTH = 80;
@@ -135,6 +135,10 @@ export const validateEventForm = (
 
   if (form.ticketUrl && !isWebAddress(form.ticketUrl)) {
     errors.ticketUrl = 'Enter a full web address starting with https://';
+  }
+
+  if (!(MINIMUM_AGES as readonly number[]).includes(form.tags.minimumAge)) {
+    errors.tags = 'Events must be for people 18 and over.';
   }
 
   if (form.repeat !== 'none') {

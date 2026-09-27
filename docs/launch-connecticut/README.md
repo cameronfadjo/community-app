@@ -121,9 +121,9 @@ Game nights (7), Trivia (4), Sports and fitness (4), Outdoors (4), Karaoke
 ## Tags: comparison and suggested additions
 
 The app records five facts per event: good for going solo, first-timers
-welcome, alcohol-free, step-free entry, and a minimum age of all ages, 18, or
-21. The directory records more, and one entry (Queer Craft Nights at Space)
-shows how useful the extra detail is.
+welcome, alcohol-free, step-free entry, and a minimum age of 18 or 21.
+There is no all-ages option. The directory records more, and one entry
+(Queer Craft Nights at Space) shows how useful the extra detail is.
 
 ### Suggested additions
 
@@ -170,6 +170,11 @@ this folder and out of the app. This was decided on September 27, 2026.
 
 When seeding, skip any event whose audience is under 18, and any event with an
 age range that ends at 18 or below.
+
+Every event in the app is 18+ or 21+. Three events in `recurring-events.csv`
+are listed by the directory as all ages: Molten Java Open Mic, Weekly
+LGBTQIA+ Game Night, and Nerd Night (Putnam). Post one only if its host is
+happy to have it listed as 18+. Otherwise leave it out.
 
 ## Seed plan
 

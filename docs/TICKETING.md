@@ -250,7 +250,7 @@ Stripe can send the same message more than once, and messages can arrive out of 
 | What is collected at checkout | As little as Stripe allows. No postal address. Confirm which fields Stripe's checkout page requires, since some may not be optional. |
 | Account requirement | Only at the moment of purchase. Browsing stays open to everyone. |
 | Age | The buyer confirms they meet the event's age limit. This is a statement, not proof. ID is still checked at the door, and the ticket screen says so. A ticket is not a promise of entry if the person fails the ID check. |
-| Under-18s | The app is for adults and lists no events for under-18s. The event type today still allows an "all ages" value (`minimumAge: 0`). Tickets should only be sold for events marked 18+ or 21+, and the "all ages" value should be reviewed separately. |
+| Under-18s | The app is for adults and lists no events for under-18s. The event type allows only 18+ and 21+. |
 | Interests and location | Buying a ticket must not send interests or location to the server. An order does reveal that an account is going to one event. That is a new kind of record for this app. Keep it readable only by the buyer, and remove personal details when no longer needed. |
 | Notifications | Ticket reminders should use plain wording on the lock screen. |
 | Analytics | Stage 0 tap counts are totals per event only. No record of who tapped. |

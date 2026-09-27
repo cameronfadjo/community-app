@@ -17,7 +17,7 @@ import { useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { EventWithDistance } from '../../src/services/api/events';
 import { openDirections } from '../../src/utils/location';
 import { formatClock, formatCover, formatTimingBadge, getTimingFor } from '../../src/utils/events';
-import { formatDistanceLabel, getTodayLabel } from '../../src/types';
+import { formatDistanceLabel, formatMinimumAge, getTodayLabel } from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 
 const BUSY_HEADLINES = {
@@ -85,7 +85,7 @@ export default function EventDetailScreen() {
   const tagLabels = getTagLabels(event.tags, event.audience);
 
   const facts = [
-    event.tags.minimumAge > 0 ? `${event.tags.minimumAge}+` : 'All ages',
+    formatMinimumAge(event.tags.minimumAge),
     event.organizerName ? `Hosted by ${event.organizerName}` : null,
   ].filter((fact): fact is string => Boolean(fact));
 

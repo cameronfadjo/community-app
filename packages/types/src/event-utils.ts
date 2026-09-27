@@ -229,6 +229,13 @@ export const getWhenWindow = (when: WhenOption, now: Date): TimeWindow => {
   };
 };
 
+/**
+ * "18+" or "21+". Anything stored below 18 shows as 18+, so an old or
+ * hand-edited event is never presented as open to under-18s.
+ */
+export const formatMinimumAge = (minimumAge: number | undefined): string =>
+  `${Math.max(18, minimumAge ?? 18)}+`;
+
 /** Events running or starting inside the window. Those already under way count until they end. */
 export const filterEventsInWindow = <T extends { startsAtMs: number; endsAtMs: number }>(
   events: T[],

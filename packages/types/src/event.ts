@@ -6,8 +6,11 @@ export type EventStatus = 'scheduled' | 'cancelled';
 /** Anonymous crowd level, derived from arrival counts. */
 export type BusyLevel = 'quiet' | 'filling_up' | 'packed';
 
-/** Minimum age to get in. 0 means all ages. */
-export type MinimumAge = 0 | 18 | 21;
+/** Every event is for adults. There is no all-ages option. */
+export const MINIMUM_AGES = [18, 21] as const;
+
+/** Minimum age to get in */
+export type MinimumAge = (typeof MINIMUM_AGES)[number];
 
 /** Facts people filter on. Set by the organizer when posting. */
 export interface EventTags {
