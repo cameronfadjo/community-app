@@ -14,3 +14,6 @@ export * from './review';
 export * from './social';
 export * from './offers';
 export * from './admin';
+export * from './activity';
+export * from './event';
+export * from './event-utils';

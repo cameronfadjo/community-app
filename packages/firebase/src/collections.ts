@@ -5,6 +5,8 @@
 export const COLLECTIONS = {
   USERS: 'users',
   VENUES: 'venues',
+  EVENTS: 'events',
+  ACTIVITIES: 'activities',
   REVIEWS: 'reviews',
   CHECK_INS: 'checkIns',
   OFFERS: 'offers',

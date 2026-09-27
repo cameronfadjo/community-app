@@ -3,6 +3,8 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Review {
   id: string;
   venueId: string;
+  /** Denormalized for display; absent on older reviews */
+  venueName?: string;
   userId: string;
   /** Denormalized for display */
   userName: string;

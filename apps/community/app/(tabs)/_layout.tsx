@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { COLORS } from '../../src/constants/theme';
 
@@ -25,7 +26,7 @@ export default function TabsLayout() {
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🗺️</span>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🗺️</Text>,
           headerTitle: 'Explore Community',
         }}
       />
@@ -33,7 +34,7 @@ export default function TabsLayout() {
         name="favorites"
         options={{
           title: 'Favorites',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>❤️</span>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>❤️</Text>,
           headerTitle: 'My Favorites',
         }}
       />
@@ -41,7 +42,7 @@ export default function TabsLayout() {
         name="my-offers"
         options={{
           title: 'Offers',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🎁</span>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🎁</Text>,
           headerTitle: 'My Offers',
         }}
       />
@@ -49,7 +50,7 @@ export default function TabsLayout() {
         name="social"
         options={{
           title: 'Social',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🌈</span>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🌈</Text>,
           headerTitle: 'Community Feed',
         }}
       />
@@ -57,7 +58,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>👤</span>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
           headerTitle: 'My Profile',
         }}
       />

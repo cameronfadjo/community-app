@@ -16,6 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Button, LoadingSpinner } from '../../src/components';
 import { createCheckIn } from '../../src/services/api/checkins';
 import { uploadCheckInImage } from '../../src/services/firebase/storage';
+import { useAuth } from '../../src/hooks/useAuth';
 import { CheckInVisibility } from '../../src/types';
 import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS, BORDER_RADIUS } from '../../src/constants/theme';
 
@@ -26,6 +27,7 @@ export default function CheckInScreen() {
     venueName: string;
   }>();
 
+  const { user } = useAuth();
   const [caption, setCaption] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<CheckInVisibility>('public');
@@ -70,6 +72,11 @@ export default function CheckInScreen() {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to check in.');
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -81,7 +88,7 @@ export default function CheckInScreen() {
         for (let i = 0; i < selectedImages.length; i++) {
           const response = await fetch(selectedImages[i]);
           const blob = await response.blob();
-          const url = await uploadCheckInImage(checkInId, blob, i);
+          const url = await uploadCheckInImage(user.uid, checkInId, blob, i);
           imageUrls.push(url);
         }
       }

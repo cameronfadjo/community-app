@@ -25,7 +25,7 @@ export default function RootLayout() {
       // Authenticated - check moderation status
       if (isPending || isRejected) {
         // Pending or rejected moderation - show moderation screen
-        if (segments[1] !== 'moderation-pending') {
+        if ((segments as string[])[1] !== 'moderation-pending') {
           router.replace('/auth/moderation-pending');
         }
       } else if (isApproved) {

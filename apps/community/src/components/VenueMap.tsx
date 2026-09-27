@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { StyleSheet, View, Platform, Text } from 'react-native';
+import type { Region } from 'react-native-maps';
 import { Venue } from '../types';
 
 // Conditionally import react-native-maps only on web
 // iOS requires native setup which we'll do later
 let MapView: any;
 let PROVIDER_GOOGLE: any;
-let Region: any;
 let MapMarker: any;
 
 if (Platform.OS === 'web') {
@@ -14,7 +14,6 @@ if (Platform.OS === 'web') {
     const maps = require('react-native-maps');
     MapView = maps.default;
     PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-    Region = maps.Region;
   } catch (e) {
     console.log('react-native-maps not available on web');
   }

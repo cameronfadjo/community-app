@@ -72,6 +72,41 @@ service cloud.firestore {
                        isPartnerOrAdmin();
     }
 
+    // Activities collection (dancing, drag shows, book clubs, ...)
+    match /activities/{activityId} {
+      // Public: the app is browsable without an account
+      allow read: if true;
+
+      // Only admins manage the list
+      allow write: if isAdmin();
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      // Public: the app is browsable without an account
+      allow read: if true;
+
+      // Partners post their own events, which publish immediately.
+      // Organizers can host at venues they don't own, so venue ownership
+      // is not checked here; admins can take an event down.
+      allow create: if isAdmin() ||
+                       (isPartner() &&
+                        request.resource.data.organizerId == request.auth.uid &&
+                        request.resource.data.status == 'scheduled' &&
+                        request.resource.data.activityIds.size() > 0 &&
+                        request.resource.data.endsAt > request.resource.data.startsAt);
+
+      // Organizers can edit or cancel their own events, but not hand them to someone else
+      allow update: if isAdmin() ||
+                       (isPartner() &&
+                        resource.data.organizerId == request.auth.uid &&
+                        request.resource.data.organizerId == resource.data.organizerId &&
+                        request.resource.data.endsAt > request.resource.data.startsAt);
+
+      allow delete: if isAdmin() ||
+                       (isPartner() && resource.data.organizerId == request.auth.uid);
+    }
+
     // Reviews collection
     match /reviews/{reviewId} {
       // Anyone can read reviews

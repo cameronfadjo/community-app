@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Venue } from '../types';
 
 interface VenueMapProps {
@@ -33,13 +33,13 @@ export const VenueMap: React.FC<VenueMapProps> = ({
       </View>
       <View style={styles.venueList}>
         {venues.slice(0, 5).map((venue) => (
-          <View
+          <TouchableOpacity
             key={venue.id}
             style={[
               styles.venueItem,
               venue.id === selectedVenueId && styles.selectedVenue,
             ]}
-            onClick={() => onVenuePress(venue)}
+            onPress={() => onVenuePress(venue)}
           >
             <Text style={styles.venueName}>{venue.name}</Text>
             {venue.distance && (
@@ -47,7 +47,7 @@ export const VenueMap: React.FC<VenueMapProps> = ({
                 {venue.distance.toFixed(1)} mi
               </Text>
             )}
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </View>

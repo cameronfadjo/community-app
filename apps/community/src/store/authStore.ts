@@ -26,7 +26,7 @@ interface AuthState {
   initialized: boolean;
 
   // Actions
-  initialize: () => void;
+  initialize: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;

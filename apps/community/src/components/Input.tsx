@@ -51,7 +51,7 @@ export const Input: React.FC<InputProps> = ({
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
         <TextInput
-          style={[styles.input, leftIcon && styles.inputWithLeftIcon]}
+          style={[styles.input, leftIcon ? styles.inputWithLeftIcon : undefined]}
           placeholderTextColor={COLORS.textTertiary}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           onFocus={() => setIsFocused(true)}

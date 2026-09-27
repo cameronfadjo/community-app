@@ -1,3 +1,4 @@
+import type { QueryConstraint } from 'firebase/firestore';
 import { OfferAnalytics } from '../../types';
 import {
   COLLECTIONS,
@@ -14,7 +15,7 @@ export const getOfferAnalytics = async (
   startDate?: Date,
   endDate?: Date
 ): Promise<OfferAnalytics[]> => {
-  const constraints = [where('offerId', '==', offerId)];
+  const constraints: QueryConstraint[] = [where('offerId', '==', offerId)];
 
   if (startDate) {
     constraints.push(where('period.start', '>=', startDate));
@@ -40,7 +41,7 @@ export const getVenueAnalytics = async (
   startDate?: Date,
   endDate?: Date
 ): Promise<OfferAnalytics[]> => {
-  const constraints = [where('venueId', '==', venueId)];
+  const constraints: QueryConstraint[] = [where('venueId', '==', venueId)];
 
   if (startDate) {
     constraints.push(where('period.start', '>=', startDate));

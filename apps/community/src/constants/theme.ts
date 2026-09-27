@@ -33,6 +33,7 @@ export const COLORS = {
   success: '#28A745',
   warning: '#FFC107',
   error: '#DC3545',
+  errorLight: '#F8D7DA',
   info: '#17A2B8',
 
   // Borders and dividers
@@ -55,6 +56,7 @@ export const SPACING = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  xxxl: 64,
 };
 
 export const BORDER_RADIUS = {
