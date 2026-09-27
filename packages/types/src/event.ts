@@ -97,6 +97,8 @@ export interface EventFormData {
   tags: EventTags;
   audience: string[];
   offerId?: string;
+  /** Shown on cards as "{perkLabel} when you arrive" */
+  perkLabel?: string;
 }
 
 export interface EventFilters {
