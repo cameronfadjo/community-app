@@ -146,6 +146,17 @@ export const getApprovalBlockers = (
   return blockers;
 };
 
+/**
+ * True when events can be posted at the venue: it is approved, an admin has
+ * verified it, and it has an address and a map position.
+ *
+ * Approved alone is not enough. Venues approved before verifying existed
+ * were never checked.
+ */
+export const isOpenForEvents = (
+  venue: LocationCheck & { moderationStatus: ModerationStatus; detailsVerified?: boolean }
+): boolean => venue.moderationStatus === 'approved' && getApprovalBlockers(venue).length === 0;
+
 interface StoredDetails {
   name: string;
   location: {

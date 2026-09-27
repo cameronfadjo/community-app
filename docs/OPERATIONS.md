@@ -32,6 +32,26 @@ pnpm --filter @community/partner-dashboard dev   # http://localhost:3001
 
 ---
 
+## Testing the security rules
+
+The rules in `apps/community/firestore.rules` decide who can read and change
+what. They have their own tests in `apps/rules-tests`, which run on GitHub
+with every pull request as the "Security rules" check.
+
+The tests run in an emulator, a throwaway copy of the database. They never
+touch the live project.
+
+To run them on your own machine you need Java 21 or later:
+
+```bash
+pnpm --filter @community/rules-tests test:rules
+```
+
+Change a rule and its test together. A rule that is deployed without a
+passing test has not been checked.
+
+---
+
 ## Granting roles
 
 Roles are granted with a script, using a service account key.

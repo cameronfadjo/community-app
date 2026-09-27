@@ -25,6 +25,7 @@ import {
   DEFAULT_ACTIVITIES,
   buildEventOccurrences,
   getClaimId,
+  isOpenForEvents,
   type ActivitySeed,
   type ClaimableGroup,
   type EventClaim,
@@ -111,12 +112,18 @@ export const createEventStore = (db: Firestore) => {
     return DEFAULT_ACTIVITIES.map(({ id, label, color }) => ({ id, label, color }));
   };
 
+  /**
+   * Venues events can be posted at. Approved alone is not enough: a venue
+   * approved before verifying existed was never checked, so it is left out
+   * until an admin verifies it.
+   */
   const loadApprovedVenues = async (): Promise<Venue[]> => {
     const snapshot = await getDocs(
       query(collection(db, COLLECTIONS.VENUES), where('moderationStatus', '==', 'approved')),
     );
     return snapshot.docs
       .map((item) => ({ ...item.data(), id: item.id }) as Venue)
+      .filter(isOpenForEvents)
       .sort((a, b) => a.name.localeCompare(b.name));
   };
 

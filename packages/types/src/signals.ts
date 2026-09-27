@@ -43,6 +43,13 @@ export const toDayKey = (when: Date): string =>
 
 export const toHourField = (when: Date): string => `h${pad(when.getHours())}`;
 
+/**
+ * The fields one action adds one to. The app sends exactly these, and the
+ * security rules refuse anything else.
+ */
+export const getSignalFields = (kind: SignalKind, when: Date): string[] =>
+  kind === 'view' ? [SIGNAL_FIELDS.view, toHourField(when)] : [SIGNAL_FIELDS[kind]];
+
 /** What this phone has already counted today. Kept on the phone only. */
 export interface CountedToday {
   day: string;

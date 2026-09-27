@@ -5,6 +5,7 @@ import {
   getApprovalBlockers,
   getVerificationBlockers,
   guessVenueCategory,
+  isOpenForEvents,
   parseCoordinates,
   parseCsv,
   validateVenueForm,
@@ -116,6 +117,35 @@ describe('getApprovalBlockers', () => {
       'its details verified',
     ]);
     expect(getApprovalBlockers({ location: venue.location })).toEqual(['its details verified']);
+  });
+});
+
+describe('isOpenForEvents', () => {
+  const venue = {
+    moderationStatus: 'approved' as const,
+    detailsVerified: true,
+    location: { address: '952 State St', coordinates: { latitude: 41.3, longitude: -72.9 } },
+  };
+
+  it('is open once approved, verified, and located', () => {
+    expect(isOpenForEvents(venue)).toBe(true);
+  });
+
+  it('is closed to a venue approved before verifying existed', () => {
+    expect(isOpenForEvents({ ...venue, detailsVerified: undefined })).toBe(false);
+    expect(isOpenForEvents({ ...venue, detailsVerified: false })).toBe(false);
+  });
+
+  it('is closed to a venue that is waiting or rejected', () => {
+    expect(isOpenForEvents({ ...venue, moderationStatus: 'pending' })).toBe(false);
+    expect(isOpenForEvents({ ...venue, moderationStatus: 'rejected' })).toBe(false);
+  });
+
+  it('is closed to a venue without an address or a map position', () => {
+    expect(isOpenForEvents({ ...venue, location: { ...venue.location, address: ' ' } })).toBe(false);
+    expect(isOpenForEvents({ ...venue, location: { ...venue.location, coordinates: null } })).toBe(
+      false
+    );
   });
 });
 
