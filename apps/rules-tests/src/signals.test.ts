@@ -71,6 +71,23 @@ describe('adding to a count', () => {
     await assertSucceeds(count(asSignedOut(env), 'perkView'));
   });
 
+  it('counts a save, signed in or not', async () => {
+    await assertSucceeds(count(asSignedOut(env), 'save'));
+    await assertSucceeds(count(asPerson(env), 'save'));
+
+    const stored = await readBack(env, `eventSignals/event_1/days/${toDayKey(new Date())}`);
+    expect(stored).toMatchObject({ saves: 2 });
+  });
+
+  it('stores nothing about who saved it', async () => {
+    const when = new Date();
+    await assertSucceeds(count(asPerson(env, 'person_1'), 'save', when));
+
+    const stored = await readBack(env, `eventSignals/event_1/days/${toDayKey(when)}`);
+    expect(JSON.stringify(stored)).not.toContain('person_1');
+    expect(Object.keys(stored ?? {}).sort()).toEqual(['day', 'eventId', 'saves']);
+  });
+
   it('adds up as more people look', async () => {
     const when = new Date();
     await assertSucceeds(count(asSignedOut(env), 'view', when));
@@ -152,6 +169,20 @@ describe('everything else is refused', () => {
         h20: 1,
       })
     );
+  });
+
+  it('refuses a save that is more than one, comes with another count, or is taken back', async () => {
+    const record = dayRecord(asSignedOut(env), 'event_1', today);
+    await assertFails(setDoc(record, { eventId: 'event_1', day: today, saves: 5 }));
+    await assertFails(setDoc(record, { eventId: 'event_1', day: today, saves: 1, directions: 1 }));
+    // Saves are not counted by the hour
+    await assertFails(setDoc(record, { eventId: 'event_1', day: today, saves: 1, h20: 1 }));
+    await assertFails(
+      setDoc(record, { eventId: 'event_1', day: today, saves: 1, savedBy: 'person_1' })
+    );
+
+    await assertSucceeds(count(asSignedOut(env), 'save'));
+    await assertFails(setDoc(record, { saves: increment(-1) }, { merge: true }));
   });
 
   it('refuses anything extra, such as who it was', async () => {

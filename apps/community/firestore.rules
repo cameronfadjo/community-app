@@ -209,7 +209,7 @@ service cloud.firestore {
 
       function hasOnlyCountFields(data) {
         return data.keys().hasOnly([
-          'eventId', 'day', 'views', 'directions', 'perkViews',
+          'eventId', 'day', 'views', 'saves', 'directions', 'perkViews',
           'h00', 'h01', 'h02', 'h03', 'h04', 'h05', 'h06', 'h07', 'h08', 'h09', 'h10', 'h11', 'h12', 'h13', 'h14', 'h15', 'h16', 'h17', 'h18', 'h19', 'h20', 'h21', 'h22', 'h23'
         ]);
       }
@@ -244,10 +244,11 @@ service cloud.firestore {
       // Exactly one count goes up by one. A view also adds one to its hour.
       function isOneMore(before, after) {
         let views = after.get('views', 0) - before.get('views', 0);
+        let saves = after.get('saves', 0) - before.get('saves', 0);
         let directions = after.get('directions', 0) - before.get('directions', 0);
         let perkViews = after.get('perkViews', 0) - before.get('perkViews', 0);
-        return views >= 0 && directions >= 0 && perkViews >= 0 &&
-               views + directions + perkViews == 1 &&
+        return views >= 0 && saves >= 0 && directions >= 0 && perkViews >= 0 &&
+               views + saves + directions + perkViews == 1 &&
                sumOfHours(after) - sumOfHours(before) == views &&
                after.diff(before).affectedKeys().size() <= 4;
       }
