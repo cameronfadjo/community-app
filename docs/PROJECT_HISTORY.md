@@ -211,8 +211,18 @@ Removed everything left over from features the app no longer has:
 The partner role script moved beside the admin one. Lint now runs on both
 dashboards and passes.
 
+### Venues and events for hosts (September 27, 2026)
+
+- Admins can add venues by form or load them from the Connecticut list.
+  Every venue is verified by an admin before it can be approved.
+- Admins can post an event for a host. The app shows it as not yet
+  confirmed until the host says the details are right.
+- The event form and the event data code are shared by both dashboards.
+
 ### Still open
 
+- Handing an event an admin posted over to its host, once they have an
+  account
 - Venues loaded from the Connecticut list need their addresses and map
   positions confirmed before they can be approved
 - Busy level ("Filling up") is not yet calculated from real arrivals

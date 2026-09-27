@@ -94,6 +94,8 @@ service cloud.firestore {
                        (isAdmin() ||
                         (isPartner() &&
                          request.resource.data.organizerId == request.auth.uid &&
+                         // Only admins post for someone else
+                         !('postedOnBehalfBy' in request.resource.data) &&
                          request.resource.data.status == 'scheduled' &&
                          request.resource.data.activityIds.size() > 0 &&
                          request.resource.data.endsAt > request.resource.data.startsAt));
@@ -104,6 +106,7 @@ service cloud.firestore {
                         (isPartner() &&
                          resource.data.organizerId == request.auth.uid &&
                          request.resource.data.organizerId == resource.data.organizerId &&
+                         !('postedOnBehalfBy' in request.resource.data) &&
                          request.resource.data.endsAt > request.resource.data.startsAt));
 
       allow delete: if isAdmin() ||

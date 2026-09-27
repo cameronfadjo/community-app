@@ -14,3 +14,9 @@ export {
 } from './role-auth';
 export { getAuthErrorMessage } from './auth-errors';
 export { COLLECTIONS, type CollectionName } from './collections';
+export {
+  createEventStore,
+  type ActivityOption,
+  type EventStore,
+  type PerkCounts,
+} from './events';

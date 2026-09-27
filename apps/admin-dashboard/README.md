@@ -8,11 +8,13 @@ Where the app's owner keeps the app in order. Built with Next.js, on port
 - **Venues:** add a venue, edit its details, verify it, approve or reject
   it, and mark one as featured. A venue must be approved before events can
   be posted there.
+- **Events:** post an event for a host who doesn't have an account yet, mark
+  it confirmed once the host says it's right, and take down any event.
 - **Accounts:** see who has an account, and block one.
 - **Overview:** totals for accounts, venues, and upcoming events.
 
-Partners post their own events in the partner dashboard. Admins can take any
-event down.
+Partners post their own events in the partner dashboard. An admin can edit
+only the events an admin posted; a host's own event is theirs to edit.
 
 ## Run it
 
@@ -33,6 +35,8 @@ from the Firebase console.
 |---|---|
 | Sign in | `/login` |
 | Overview | `/dashboard` |
+| Events | `/dashboard/events` |
+| Post for a host | `/dashboard/events/new` |
 | Accounts | `/dashboard/users` |
 | Venues | `/dashboard/venues` |
 | Add a venue | `/dashboard/venues/new` |
@@ -72,6 +76,19 @@ unverified again. If it was approved, it goes back to waiting.
 
 The security rules enforce this too: a venue can't be approved unless it is
 verified and has an address and a map position.
+
+## Posting for a host
+
+Use this for events from a directory or a conversation, where the host has
+no account yet.
+
+- Say who hosts it and where the details came from. Only admins see the
+  source.
+- Leave "The host has confirmed these details" off until someone who runs
+  the event has told you it's right.
+- Until then, the app shows the event with "Not yet confirmed by the host".
+- When the host confirms, use "Host confirmed this date" or "Host confirmed
+  every date" on the Events page.
 
 ## The map position
 

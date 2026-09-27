@@ -27,3 +27,5 @@ export {
 } from './skeletons/LoadingSkeleton';
 
 export { StatusBadge } from './badges/StatusBadge';
+
+export { EventForm, type EventFormProps } from './events/EventForm';

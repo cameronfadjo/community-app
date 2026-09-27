@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ActivityColor, EventTags, formatDistanceLabel } from '../../types';
 import { EventWithDistance } from '../../services/api/events';
-import { formatClock, formatCover, formatTimingBadge, getTimingFor } from '../../utils/events';
+import { formatClock, formatCover, formatTimingBadge, getTimingFor, isUnconfirmed } from '../../utils/events';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../constants/theme';
 import { ActivityIcon } from './ActivityIcon';
 import { BusyIndicator } from './BusyIndicator';
@@ -48,6 +48,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon,
     .join(' · ');
 
   const tagLabels = getTagLabels(event.tags, event.audience).slice(0, 3);
+  const unconfirmed = isUnconfirmed(event);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9} accessibilityRole="button">
@@ -79,8 +80,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon,
           {meta}
         </Text>
 
-        {(event.perkLabel || tagLabels.length > 0) && (
+        {(event.perkLabel || tagLabels.length > 0 || unconfirmed) && (
           <View style={styles.tags}>
+            {unconfirmed && <Tag label="Not yet confirmed by the host" />}
             {event.perkLabel && <Tag label={`${event.perkLabel} when you arrive`} variant="perk" />}
             {tagLabels.map((label) => (
               <Tag key={label} label={label} />

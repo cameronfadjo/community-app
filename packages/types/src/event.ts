@@ -76,8 +76,15 @@ export interface EventListing {
   busyLevel?: BusyLevel;
 
   status: EventStatus;
-  /** Last time the organizer confirmed the details are still right */
+  /**
+   * Last time the host confirmed the details are still right. Missing on
+   * an event an admin posted for a host who hasn't confirmed it yet.
+   */
   confirmedAt?: Timestamp;
+  /** UID of the admin who posted it for the host, when one did */
+  postedOnBehalfBy?: string;
+  /** Where an admin got the details. For admins only. */
+  detailsSource?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -89,7 +96,14 @@ export interface EventListing {
  */
 export type EventRepeat = 'none' | 'weekly' | 'every_two_weeks' | 'monthly';
 
-/** What the partner dashboard form collects. */
+export interface PostedOnBehalf {
+  /** The host has told us the details are right */
+  confirmedByHost: boolean;
+  /** Where the details came from: a directory, a call, the host's website */
+  detailsSource: string;
+}
+
+/** What the posting form collects. */
 export interface EventFormData {
   title: string;
   description: string;
@@ -109,6 +123,8 @@ export interface EventFormData {
   offerId?: string;
   /** Shown on cards as "{perkLabel} when you arrive" */
   perkLabel?: string;
+  /** Set when an admin posts for a host. The host is `organizerName`. */
+  onBehalf?: PostedOnBehalf;
 }
 
 export interface EventFilters {

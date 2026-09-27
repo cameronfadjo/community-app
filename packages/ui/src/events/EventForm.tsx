@@ -18,10 +18,15 @@ import {
   type MinimumAge,
   type Venue,
 } from '@community/types';
-import { loadActivityOptions, loadApprovedVenues, type ActivityOption } from '@/lib/events';
+import type { ActivityOption } from '@community/firebase';
 
-interface EventFormProps {
+export interface EventFormProps {
   mode: 'create' | 'edit';
+  /** Where the form gets the activities and venues to choose from */
+  loadActivityOptions: () => Promise<ActivityOption[]>;
+  loadApprovedVenues: () => Promise<Venue[]>;
+  /** An admin is posting for a host, who may not have confirmed the details yet */
+  onBehalf?: boolean;
   /** Event to edit, or to copy from when creating */
   initial?: EventListing | null;
   submitLabel: string;
@@ -97,7 +102,16 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: EventFormProps) {
+export function EventForm({
+  mode,
+  loadActivityOptions,
+  loadApprovedVenues,
+  onBehalf = false,
+  initial,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: EventFormProps) {
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
@@ -134,6 +148,11 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
     MINIMUM_AGES.find((age) => age === initial?.tags.minimumAge) ?? 21,
   );
   const [audience, setAudience] = useState(initial?.audience.join(', ') ?? '');
+  const [detailsSource, setDetailsSource] = useState(initial?.detailsSource ?? '');
+  // Copying an event doesn't carry the host's confirmation to the new dates
+  const [confirmedByHost, setConfirmedByHost] = useState(
+    mode === 'edit' && Boolean(initial?.confirmedAt),
+  );
 
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [coverError, setCoverError] = useState<string | null>(null);
@@ -158,7 +177,7 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadActivityOptions, loadApprovedVenues]);
 
   const times = useMemo(() => resolveEventTimes(date, startTime, endTime), [date, startTime, endTime]);
   const endsNextDay = times ? times.endsAt.getDate() !== times.startsAt.getDate() : false;
@@ -216,6 +235,7 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
         .filter(Boolean),
       offerId: initial?.offerId,
       perkLabel: perkLabel || undefined,
+      onBehalf: onBehalf ? { confirmedByHost, detailsSource } : undefined,
     };
 
     const found = validateEventForm(form, Date.now(), { isEditing: mode === 'edit' });
@@ -330,9 +350,14 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
         </Field>
 
         <Field
-          label="Hosted by (optional)"
+          label={onBehalf ? 'Hosted by' : 'Hosted by (optional)'}
           htmlFor="organizer"
-          hint="Fill this in if a promoter or group runs the event rather than the venue."
+          hint={
+            onBehalf
+              ? 'The group, promoter, or venue that runs the event.'
+              : 'Fill this in if a promoter or group runs the event rather than the venue.'
+          }
+          error={errors.organizerName}
         >
           <input
             id="organizer"
@@ -408,6 +433,42 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
           </div>
         )}
       </Section>
+
+      {onBehalf && (
+        <Section title="Posting for the host">
+          <Field
+            label="Where the details came from"
+            htmlFor="details-source"
+            hint="A directory, the host's website, a call with someone. Only admins see this."
+            error={errors.onBehalf}
+          >
+            <input
+              id="details-source"
+              className={inputClass}
+              value={detailsSource}
+              onChange={(e) => setDetailsSource(e.target.value)}
+            />
+          </Field>
+
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:border-purple-300">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300"
+              checked={confirmedByHost}
+              onChange={(e) => setConfirmedByHost(e.target.checked)}
+            />
+            <span>
+              <span className="block text-sm font-medium text-gray-900">
+                The host has confirmed these details
+              </span>
+              <span className="block text-sm text-gray-500">
+                Leave this off until someone who runs the event has told you it is right. Until
+                then the app shows it as not yet confirmed.
+              </span>
+            </span>
+          </label>
+        </Section>
+      )}
 
       <Section title="Cost">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -69,6 +69,9 @@ interface SampleEventInput {
   audience: string[];
   perkLabel?: string;
   busyLevel?: EventListing['busyLevel'];
+  organizerName?: string;
+  /** Posted for the host, who hasn't confirmed it yet */
+  unconfirmed?: boolean;
 }
 
 const build = (input: SampleEventInput, nowMs: number): EventListing => {
@@ -91,7 +94,8 @@ const build = (input: SampleEventInput, nowMs: number): EventListing => {
     perkLabel: input.perkLabel,
     busyLevel: input.busyLevel,
     status: 'scheduled',
-    confirmedAt: stamp,
+    ...(input.organizerName ? { organizerName: input.organizerName } : {}),
+    ...(input.unconfirmed ? { postedOnBehalfBy: 'sample_admin' } : { confirmedAt: stamp }),
     createdAt: stamp,
     updatedAt: stamp,
   };
@@ -222,7 +226,9 @@ export const buildSampleEvents = (nowMs: number = Date.now()): EventListing[] =>
       {
         id: 'sample_event_hangout',
         title: 'Third Saturday hangout',
-        description: 'Coffee, board games, and easy conversation. Hosted by the community center.',
+        description: 'Coffee, board games, and easy conversation.',
+        organizerName: 'The community center',
+        unconfirmed: true,
         activityIds: ['community-hangouts', 'game-nights'],
         venue: 'frances',
         startsInMinutes: 3 * DAY_MINUTES,

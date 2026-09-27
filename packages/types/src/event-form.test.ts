@@ -6,6 +6,7 @@ import {
   parseCoverToCents,
   resolveEventTimes,
   validateEventForm,
+  getHostConfirmation,
 } from './event-form';
 import type { MinimumAge } from './event';
 import type { EventFormData } from './event';
@@ -203,5 +204,48 @@ describe('buildEventOccurrences', () => {
       () => 'series_1'
     );
     expect(occurrences).toHaveLength(2);
+  });
+});
+
+describe('posting for a host', () => {
+  const onBehalf = { confirmedByHost: false, detailsSource: 'LGBTQ+ CT Resources directory' };
+
+  it('accepts an event with a host and a source', () => {
+    const form = validForm({ organizerName: 'Trans Haven', onBehalf });
+    expect(validateEventForm(form, now)).toEqual({});
+  });
+
+  it('needs to know who hosts it', () => {
+    const form = validForm({ organizerName: '  ', onBehalf });
+    expect(validateEventForm(form, now).organizerName).toBe('Enter who hosts the event.');
+  });
+
+  it('needs to know where the details came from', () => {
+    const form = validForm({
+      organizerName: 'Trans Haven',
+      onBehalf: { ...onBehalf, detailsSource: '' },
+    });
+    expect(validateEventForm(form, now).onBehalf).toBe('Say where the details came from.');
+  });
+
+  it('asks for neither when a partner posts their own event', () => {
+    expect(validateEventForm(validForm({ organizerName: '' }), now)).toEqual({});
+  });
+});
+
+describe('getHostConfirmation', () => {
+  it('is confirmed once the host has confirmed the details', () => {
+    expect(getHostConfirmation({ confirmedAtMs: 1000 })).toBe('confirmed');
+    expect(getHostConfirmation({ confirmedAtMs: 1000, postedOnBehalfBy: 'admin_1' })).toBe(
+      'confirmed'
+    );
+  });
+
+  it('is unconfirmed when posted for a host who has not confirmed yet', () => {
+    expect(getHostConfirmation({ postedOnBehalfBy: 'admin_1' })).toBe('unconfirmed');
+  });
+
+  it('treats an event from before confirmations as confirmed by its own organizer', () => {
+    expect(getHostConfirmation({})).toBe('confirmed');
   });
 });

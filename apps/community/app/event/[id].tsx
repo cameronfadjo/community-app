@@ -16,7 +16,7 @@ import { useEventStore } from '../../src/store/eventStore';
 import { useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { EventWithDistance } from '../../src/services/api/events';
 import { openDirections } from '../../src/utils/location';
-import { formatClock, formatCover, formatTimingBadge, getTimingFor } from '../../src/utils/events';
+import { formatClock, formatCover, formatTimingBadge, getTimingFor, isUnconfirmed } from '../../src/utils/events';
 import { formatDistanceLabel, formatMinimumAge, getTodayLabel } from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 
@@ -200,6 +200,15 @@ export default function EventDetailScreen() {
             </View>
           )}
 
+          {isUnconfirmed(event) && (
+            <View style={styles.unconfirmed} accessibilityRole="text">
+              <MaterialCommunityIcons name="information-outline" size={20} color={COLORS.text} />
+              <Text style={styles.unconfirmedText}>
+                The host hasn't confirmed these details yet. Check with them before you set off.
+              </Text>
+            </View>
+          )}
+
           <View>
             <Text style={styles.sectionTitle}>What to expect</Text>
             <Text style={styles.description}>{event.description}</Text>
@@ -272,6 +281,21 @@ export default function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  unconfirmed: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: ACTIVITY_PALETTE.yellow.tint,
+  },
+  unconfirmedText: {
+    flex: 1,
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: COLORS.text,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
