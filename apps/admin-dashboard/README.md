@@ -71,6 +71,10 @@ it arrived:
 | Verified | An admin has checked the name, the address, and that the map position sits on the front door. |
 | Approved | Partners can post events there. |
 
+Approved is not enough on its own. A venue approved in the earlier version
+of the app was never verified, so partners are not offered it. The Venues
+page says how many there are, and can move them all back to waiting.
+
 Adding a venue never verifies it. That is always a separate step, so
 details from a list or a form are checked before anyone relies on them.
 

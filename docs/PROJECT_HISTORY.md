@@ -228,6 +228,16 @@ dashboards and passes.
 - Perk records are deleted 30 days after the event.
 - Venues can carry links to their social accounts.
 
+### Security rules tests (September 27, 2026)
+
+- Every rule now has tests, in `apps/rules-tests`, run on GitHub with each
+  pull request.
+- Venues approved before verifying existed are no longer offered to
+  partners. There were 13 in the live project, left from the earlier
+  version of the app.
+- The app can now look for a perk someone hasn't unlocked yet without
+  being refused.
+
 ### Still open
 
 - Venues loaded from the Connecticut list need their addresses and map

@@ -2,12 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, increment, setDoc } from 'firebase/firestore';
 import {
   CountedToday,
-  SIGNAL_FIELDS,
   SignalKind,
+  getSignalFields,
   markCounted,
   shouldCount,
   toDayKey,
-  toHourField,
 } from '../../types';
 import { db } from '../firebase/config';
 import { COLLECTIONS } from '../firebase/firestore';
@@ -59,9 +58,8 @@ export const countSignal = (eventId: string, kind: SignalKind): void => {
       {
         eventId,
         day: today,
-        [SIGNAL_FIELDS[kind]]: increment(1),
         // Views are also counted by the hour, so hosts can see when people look
-        ...(kind === 'view' ? { [toHourField(now)]: increment(1) } : {}),
+        ...Object.fromEntries(getSignalFields(kind, now).map((field) => [field, increment(1)])),
       },
       { merge: true }
     );

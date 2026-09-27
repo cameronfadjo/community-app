@@ -11,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { COLLECTIONS } from '@community/firebase';
 import {
@@ -132,6 +133,22 @@ export async function setVenueStatus(venueId: string, status: ModerationStatus):
     moderationStatus: status,
     updatedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Moves venues back to waiting. Used for venues that were approved before
+ * verifying existed, so each one gets checked before events go there.
+ */
+export async function moveToWaiting(venueIds: string[]): Promise<void> {
+  const batch = writeBatch(db);
+  for (const venueId of venueIds) {
+    batch.update(doc(venues(), venueId), {
+      moderationStatus: 'pending',
+      featured: false,
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
 }
 
 export async function setVenueFeatured(venueId: string, featured: boolean): Promise<void> {

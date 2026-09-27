@@ -4,6 +4,7 @@ import {
   PERK_RECORD_KEPT_DAYS,
   buildFunnel,
   canShowBreakdown,
+  getSignalFields,
   getPerkRecordDeleteAtMs,
   markCounted,
   rollUpByVenue,
@@ -26,6 +27,19 @@ describe('toDayKey and toHourField', () => {
     expect(toDayKey(when)).toBe('2026-09-05');
     expect(toHourField(when)).toBe('h07');
     expect(toHourField(new Date(2026, 8, 5, 23, 59))).toBe('h23');
+  });
+});
+
+describe('getSignalFields', () => {
+  const when = new Date(2026, 8, 25, 20, 15);
+
+  it('adds a view to the total and to its hour', () => {
+    expect(getSignalFields('view', when)).toEqual(['views', 'h20']);
+  });
+
+  it('adds the others to their total only', () => {
+    expect(getSignalFields('directions', when)).toEqual(['directions']);
+    expect(getSignalFields('perkView', when)).toEqual(['perkViews']);
   });
 });
 

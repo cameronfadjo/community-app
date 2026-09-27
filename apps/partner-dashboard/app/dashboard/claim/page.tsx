@@ -18,7 +18,7 @@ import { createClaim, loadMyClaims, loadUpcomingEvents, withdrawClaim } from '@/
 const STATUS_TEXT: Record<EventClaim['status'], string> = {
   pending: 'Waiting for us to check',
   approved: 'Handed over to you',
-  rejected: 'Not handed over',
+  rejected: 'Not handed over. Get in touch if this is wrong.',
 };
 
 const STATUS_STYLES: Record<EventClaim['status'], string> = {
@@ -77,10 +77,9 @@ export default function ClaimPage() {
     };
   }, [user, version]);
 
-  const claimedKeys = useMemo(
-    () => new Set(claims.filter((claim) => claim.status !== 'rejected').map((claim) => claim.claimKey)),
-    [claims],
-  );
+  // A claim is made once. One that was turned down is settled by talking to
+  // us, not by asking again.
+  const claimedKeys = useMemo(() => new Set(claims.map((claim) => claim.claimKey)), [claims]);
 
   const visible = useMemo(() => {
     const words = search.trim().toLowerCase();

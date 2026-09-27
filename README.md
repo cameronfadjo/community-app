@@ -10,7 +10,8 @@ community-platform/
 │   ├── community/          # Expo / React Native consumer app
 │   ├── admin-dashboard/    # Next.js dashboard for moderation
 │   ├── partner-dashboard/  # Next.js dashboard where venues post events
-│   └── website/            # Terms, Privacy, and support pages
+│   ├── website/            # Terms, Privacy, and support pages
+│   └── rules-tests/        # Tests for the database's security rules
 ├── packages/               # Shared types, Firebase helpers, and dashboard UI
 ├── docs/                   # Project documentation
 ├── turbo.json              # Turborepo task pipeline

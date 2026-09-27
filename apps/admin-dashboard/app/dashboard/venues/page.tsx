@@ -8,12 +8,19 @@ import {
   VENUE_CATEGORY_LABELS,
   getApprovalBlockers,
   getVerificationBlockers,
+  isOpenForEvents,
   type ModerationStatus,
   type VenueCategory,
   type VenueDraft,
 } from '@community/types';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { loadVenues, setVenueFeatured, setVenueStatus, verifyVenue } from '@/lib/venues';
+import {
+  loadVenues,
+  moveToWaiting,
+  setVenueFeatured,
+  setVenueStatus,
+  verifyVenue,
+} from '@/lib/venues';
 
 type Filter = ModerationStatus | 'all';
 
@@ -128,6 +135,23 @@ export default function VenuesPage() {
     }
   };
 
+  // Approved before verifying existed, so nobody has checked them
+  const neverChecked = venues.filter(
+    (venue) => venue.moderationStatus === 'approved' && !isOpenForEvents(venue),
+  );
+
+  const handleMoveToWaiting = async () => {
+    setMessage(null);
+    try {
+      await moveToWaiting(neverChecked.map((venue) => venue.id));
+      setSelectedId(null);
+      reload();
+    } catch (error) {
+      console.error('Error moving venues to waiting:', error);
+      setMessage("We couldn't move those venues. Try again.");
+    }
+  };
+
   const handleStatus = async (venueId: string, status: ModerationStatus) => {
     setMessage(null);
     try {
@@ -171,6 +195,27 @@ export default function VenuesPage() {
       {message && (
         <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800" role="alert">
           {message}
+        </div>
+      )}
+
+      {!loading && neverChecked.length > 0 && (
+        <div className="mb-6 rounded-lg bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-900">
+          <p className="font-semibold mb-1">
+            {neverChecked.length === 1
+              ? '1 approved venue has not been verified'
+              : `${neverChecked.length} approved venues have not been verified`}
+          </p>
+          <p className="mb-3">
+            Events can&apos;t be posted at a venue until its details are verified. Verify each one
+            below, or move them all back to waiting and work through them there.
+          </p>
+          <button
+            type="button"
+            onClick={handleMoveToWaiting}
+            className="px-4 py-2 rounded-lg bg-yellow-900 text-white font-medium hover:bg-yellow-950 transition"
+          >
+            Move {neverChecked.length === 1 ? 'it' : `all ${neverChecked.length}`} back to waiting
+          </button>
         </div>
       )}
 
@@ -401,13 +446,15 @@ export default function VenuesPage() {
 
                 {selected.moderationStatus === 'approved' && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => handleFeatured(selected.id, !selected.featured)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-800 font-medium hover:bg-gray-50 transition"
-                    >
-                      {selected.featured ? 'Remove featured' : 'Make featured'}
-                    </button>
+                    {isOpenForEvents(selected) && (
+                      <button
+                        type="button"
+                        onClick={() => handleFeatured(selected.id, !selected.featured)}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-800 font-medium hover:bg-gray-50 transition"
+                      >
+                        {selected.featured ? 'Remove featured' : 'Make featured'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleStatus(selected.id, 'rejected')}

@@ -117,7 +117,14 @@ service cloud.firestore {
     match /perkRedemptions/{redemptionId} {
       // Only the person who unlocked it. Organizers read totals from
       // eventStats, so they never see which accounts used their perk.
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      //
+      // The app looks for a person's perk before they have one, so looking
+      // goes by the ID, which ends with their own account's ID. Going by
+      // what the record holds would refuse a record that isn't there yet.
+      allow get: if isAdmin() ||
+                    (isAuthenticated() &&
+                     redemptionId.matches('^.+_' + request.auth.uid + '$'));
+      allow list: if isOwner(resource.data.userId) || isAdmin();
 
       // Any signed-in person can unlock a perk for themselves. The ID ties it
       // to one event and one person, and the details must match the event.
@@ -143,10 +150,14 @@ service cloud.firestore {
       allow delete: if false;
 
       // The record says who was where, so it must carry the date the
-      // database deletes it: thirty days after the event ends
+      // database deletes it: thirty days after the event ends. A day either
+      // side allows for an end time that changed while someone had the
+      // event open, so their perk still unlocks at the door.
       function isDeletedInTime(redemption) {
         let event = get(/databases/$(database)/documents/events/$(redemption.eventId)).data;
-        return redemption.deleteAt == event.endsAt + duration.value(30, 'd');
+        return redemption.deleteAt is timestamp &&
+               redemption.deleteAt >= event.endsAt + duration.value(29, 'd') &&
+               redemption.deleteAt <= event.endsAt + duration.value(31, 'd');
       }
 
       function matchesEvent(redemption) {
@@ -188,11 +199,12 @@ service cloud.firestore {
                exists(/databases/$(database)/documents/events/$(eventId));
       }
 
-      // Phones keep their own time, so allow a day either side
+      // Phones keep their own time and sit in their own time zone, so
+      // allow for a clock that is a day out either way
       function isRecent(day) {
         let date = timestamp.date(int(day[0:4]), int(day[5:7]), int(day[8:10]));
-        return date > request.time - duration.value(2, 'd') &&
-               date < request.time + duration.value(2, 'd');
+        return date > request.time - duration.value(3, 'd') &&
+               date < request.time + duration.value(3, 'd');
       }
 
       function hasOnlyCountFields(data) {
