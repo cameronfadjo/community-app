@@ -29,6 +29,7 @@ export const COLLECTIONS = {
   VENUES: 'venues',
   EVENTS: 'events',
   ACTIVITIES: 'activities',
+  PERK_REDEMPTIONS: 'perkRedemptions',
   REVIEWS: 'reviews',
   CHECK_INS: 'checkIns',
   OFFERS: 'offers',

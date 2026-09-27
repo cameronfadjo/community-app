@@ -107,6 +107,45 @@ service cloud.firestore {
                        (isPartner() && resource.data.organizerId == request.auth.uid);
     }
 
+    // Perks unlocked on arrival. One per person per event.
+    match /perkRedemptions/{redemptionId} {
+      // The person who unlocked it, and the organizer counting redemptions
+      allow read: if isOwner(resource.data.userId) ||
+                     isOwner(resource.data.organizerId) ||
+                     isAdmin();
+
+      // Any signed-in person can unlock a perk for themselves. The ID ties it
+      // to one event and one person, and the details must match the event.
+      allow create: if isOwner(request.resource.data.userId) &&
+                       redemptionId == request.resource.data.eventId + '_' + request.auth.uid &&
+                       exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+                       matchesEvent(request.resource.data) &&
+                       request.resource.data.unlockedAt == request.time &&
+                       request.resource.data.expiresAt > request.time &&
+                       // The app sets 15 minutes; the extra allows for a phone clock that runs fast
+                       request.resource.data.expiresAt <= request.time + duration.value(20, 'm') &&
+                       !('redeemedAt' in request.resource.data);
+
+      // The only change allowed is redeeming it once, before it expires
+      allow update: if isOwner(resource.data.userId) &&
+                       !('redeemedAt' in resource.data) &&
+                       request.time < resource.data.expiresAt &&
+                       request.resource.data.redeemedAt == request.time &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemedAt']);
+
+      allow delete: if false;
+
+      function matchesEvent(redemption) {
+        let event = get(/databases/$(database)/documents/events/$(redemption.eventId)).data;
+        return event.status == 'scheduled' &&
+               'perkLabel' in event &&
+               redemption.perkLabel == event.perkLabel &&
+               redemption.organizerId == event.organizerId &&
+               redemption.venueId == event.venueId &&
+               request.time < event.endsAt;
+      }
+    }
+
     // Reviews collection
     match /reviews/{reviewId} {
       // Anyone can read reviews

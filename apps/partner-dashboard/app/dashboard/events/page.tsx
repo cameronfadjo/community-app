@@ -10,6 +10,8 @@ import {
   cancelUpcomingInSeries,
   confirmEvent,
   loadMyEvents,
+  loadPerkCounts,
+  type PerkCounts,
   setEventStatus,
 } from '@/lib/events';
 
@@ -34,6 +36,7 @@ export default function EventsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   // When the list was last loaded, used to split upcoming from past
   const [nowMs, setNowMs] = useState(0);
+  const [perkCounts, setPerkCounts] = useState<Record<string, PerkCounts>>({});
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -67,6 +70,13 @@ export default function EventsPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
+    // Perk totals are a nice-to-have, so a failure here doesn't block the list
+    loadPerkCounts(user.uid)
+      .then((counts) => {
+        if (!cancelled) setPerkCounts(counts);
+      })
+      .catch((error) => console.error('Error loading perk counts:', error));
 
     return () => {
       cancelled = true;
@@ -204,6 +214,12 @@ export default function EventsPage() {
                       {event.venueName} · {formatCover(event.coverCents)}
                       {event.perkLabel && ` · Perk: ${event.perkLabel}`}
                     </p>
+                    {event.perkLabel && perkCounts[event.id] && (
+                      <p className="text-sm text-purple-800 mt-1">
+                        {perkCounts[event.id].unlocked} arrived and unlocked the perk ·{' '}
+                        {perkCounts[event.id].redeemed} redeemed
+                      </p>
+                    )}
                     {isUpcoming && event.confirmedAt && (
                       <p className="text-xs text-gray-500 mt-1">
                         Details confirmed {format(event.confirmedAt.toDate(), 'MMM d')}

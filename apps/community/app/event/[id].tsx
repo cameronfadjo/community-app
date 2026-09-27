@@ -7,6 +7,7 @@ import {
   ActivityIcon,
   BUSY_LABELS,
   BusyIndicator,
+  PerkCard,
   PrimaryButton,
   getTagLabels,
 } from '../../src/components/events';
@@ -214,17 +215,7 @@ export default function EventDetailScreen() {
             )}
           </View>
 
-          {event.perkLabel && (
-            <View style={styles.perk}>
-              <View style={styles.perkIcon}>
-                <MaterialCommunityIcons name="ticket-confirmation-outline" size={22} color={COLORS.textInverse} />
-              </View>
-              <View style={styles.busyText}>
-                <Text style={styles.cardTitle}>{event.perkLabel} when you arrive</Text>
-                <Text style={styles.perkNote}>Nothing to claim. It unlocks once you're at the door.</Text>
-              </View>
-            </View>
-          )}
+          <PerkCard event={event} />
 
           {alsoHere.length > 0 && (
             <View>
@@ -468,28 +459,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: 14,
     color: '#3A3A50',
-  },
-  perk: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 24,
-    backgroundColor: COLORS.accentLight,
-  },
-  perkIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  perkNote: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4B2A52',
   },
   alsoList: {
     gap: 10,

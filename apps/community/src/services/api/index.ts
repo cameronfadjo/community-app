@@ -5,3 +5,4 @@ export * from './reviews';
 export * from './social';
 export * from './activities';
 export * from './events';
+export * from './perks';

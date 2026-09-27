@@ -21,6 +21,7 @@ import {
   type ActivitySeed,
   type EventFormData,
   type EventListing,
+  type PerkRedemption,
   type Venue,
 } from '@community/types';
 import { db } from './firebase/config';
@@ -189,4 +190,29 @@ export async function cancelUpcomingInSeries(
   }
   await batch.commit();
   return upcoming.length;
+}
+
+export interface PerkCounts {
+  /** People who arrived and unlocked the perk */
+  unlocked: number;
+  /** Of those, how many had it redeemed at the bar */
+  redeemed: number;
+}
+
+/** Perk totals for each of the organizer's events, keyed by event ID */
+export async function loadPerkCounts(organizerId: string): Promise<Record<string, PerkCounts>> {
+  const snapshot = await getDocs(
+    query(collection(db, COLLECTIONS.PERK_REDEMPTIONS), where('organizerId', '==', organizerId)),
+  );
+
+  const counts: Record<string, PerkCounts> = {};
+  for (const item of snapshot.docs) {
+    const redemption = item.data() as PerkRedemption;
+    const entry = (counts[redemption.eventId] ??= { unlocked: 0, redeemed: 0 });
+    entry.unlocked += 1;
+    if (redemption.redeemedAt) {
+      entry.redeemed += 1;
+    }
+  }
+  return counts;
 }

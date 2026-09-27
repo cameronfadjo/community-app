@@ -18,3 +18,5 @@ export * from './activity';
 export * from './event';
 export * from './event-utils';
 export * from './event-form';
+export * from './perk';
+export * from './perk-utils';

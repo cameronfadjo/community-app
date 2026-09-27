@@ -9,6 +9,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import { useAuth } from '../src/hooks';
 import { LoadingSpinner } from '../src/components';
+import { usePerkStore } from '../src/store/perkStore';
 import { COLORS } from '../src/constants/theme';
 
 export default function RootLayout() {
@@ -31,7 +32,10 @@ export default function RootLayout() {
     }
 
     if (isAuthenticated && segments[0] === 'auth') {
-      router.replace('/(tabs)/tonight');
+      // Someone who signed in to unlock a perk goes back to that event
+      const { pendingReturnPath, setPendingReturnPath } = usePerkStore.getState();
+      setPendingReturnPath(null);
+      router.replace((pendingReturnPath ?? '/(tabs)/tonight') as never);
     }
   }, [isAuthenticated, initialized, segments]);
 
