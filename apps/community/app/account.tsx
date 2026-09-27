@@ -29,7 +29,14 @@ const PROMISES: Array<{ icon: IconName; title: string; detail: string }> = [
   {
     icon: 'ticket-confirmation-outline',
     title: 'Perks are remembered',
-    detail: 'We keep a record of perks you unlock, so each one is used once. Venues see totals, never who.',
+    detail:
+      'We keep a record of perks you unlock, so each one is used once. It is deleted 30 days after the event. Venues see totals, never who.',
+  },
+  {
+    icon: 'counter',
+    title: 'Counted, not tracked',
+    detail:
+      'We count how often an event is looked at, so hosts know what works. A count is only a number. It carries nothing about you.',
   },
 ];
 

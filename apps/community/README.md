@@ -65,6 +65,9 @@ job: keeping perk totals, and deleting an account.
 - Location is read while the app is open and is never sent to the server.
 - Nudges are scheduled on the phone.
 - Nobody has a public profile.
+- Hosts see counts of what people did, never who. See `src/services/api/signals.ts`.
+- Perk records are deleted 30 days after the event. The database does this
+  itself, using the `deleteAt` date on each record.
 
 ## Firebase
 

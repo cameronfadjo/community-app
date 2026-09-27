@@ -3,3 +3,4 @@ export * from './users';
 export * from './activities';
 export * from './events';
 export * from './perks';
+export * from './signals';

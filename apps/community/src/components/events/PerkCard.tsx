@@ -14,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useEventStore } from '../../store/eventStore';
 import { usePerkStore } from '../../store/perkStore';
 import { getCurrentLocation } from '../../utils/location';
+import { countSignal } from '../../services/api/signals';
 import { formatClock } from '../../utils/events';
 import { COLORS, FONTS } from '../../constants/theme';
 
@@ -78,6 +79,7 @@ export const PerkCard: React.FC<PerkCardProps> = ({ event }) => {
   const perkPath = `/perk/${event.id}` as const;
 
   const checkArrival = async () => {
+    countSignal(event.id, 'perkView');
     setWorking(true);
     setMessage(null);
     try {
@@ -97,6 +99,7 @@ export const PerkCard: React.FC<PerkCardProps> = ({ event }) => {
   };
 
   const handleUnlock = async () => {
+    countSignal(event.id, 'perkView');
     setWorking(true);
     setMessage(null);
     try {
@@ -111,6 +114,7 @@ export const PerkCard: React.FC<PerkCardProps> = ({ event }) => {
   };
 
   const handleSignIn = () => {
+    countSignal(event.id, 'perkView');
     setPendingReturnPath(`/event/${event.id}`);
     router.push('/auth/login');
   };

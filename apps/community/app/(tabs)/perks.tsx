@@ -118,7 +118,7 @@ export default function PerksScreen() {
                 <TouchableOpacity
                   key={event.id}
                   style={styles.row}
-                  onPress={() => router.push(`/event/${event.id}`)}
+                  onPress={() => router.push(`/event/${event.id}?from=perks`)}
                   activeOpacity={0.85}
                   accessibilityRole="button"
                 >

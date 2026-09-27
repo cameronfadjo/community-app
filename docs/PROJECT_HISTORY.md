@@ -223,6 +223,9 @@ dashboards and passes.
 - The app creates each person's profile itself, so the `onUserCreate`
   function was removed. Two functions remain.
 - The app loads events once and reuses them, to cut database reads.
+- Partners have an Insights page: views, directions, and the perk funnel,
+  as anonymous counts. Stage 1 of the plan agreed on September 27, 2026.
+- Perk records are deleted 30 days after the event.
 - Venues can carry links to their social accounts.
 
 ### Still open

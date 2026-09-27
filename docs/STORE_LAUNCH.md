@@ -184,12 +184,13 @@ This table is the source for both privacy forms. "Collected" means it leaves the
 | Name (display name) | Yes, only with an account | Yes | Shown to the person on their Account screen | Asked for at sign up |
 | Password | Handled by Firebase Auth | Yes | Sign in | You never see it. Firebase stores a protected form of it. |
 | User ID | Yes, only with an account | Yes | Ties perk records to the account | Firebase UID |
-| Perk unlock records: event, venue name, perk, time unlocked, time redeemed | Yes, only with an account | Yes | So each perk is used once. Venues see totals only. | This record shows the person was at a venue at a time. Treat it as sensitive. |
+| Perk unlock records: event, venue name, perk, time unlocked, time redeemed | Yes, only with an account | Yes | So each perk is used once. Venues see totals only. | This record shows the person was at a venue at a time. Treat it as sensitive. Deleted 30 days after the event. |
 | Precise location | No | No | Sort by distance, confirm arrival | Read on the phone and compared on the phone. Not sent to your servers. |
 | Notification choices and followed activities | No | No | Reminders | Saved on the phone only |
 | Photos, camera, microphone, contacts, calendar | No | No | Not used | |
 | Payment or purchase data | No | No | Not used | No purchases in the app |
 | Advertising ID, tracking across apps | No | No | Not used | No ad SDK |
+| Anonymous counts: event opened, directions tapped, perk gone for, with the day and hour | Yes | No | So venues can see what is working | Sent with no account ID, device ID, or location. Each phone counts once per event per day. Ask your lawyer whether the forms treat this as "Product interaction" data that is not linked to the person. |
 | Analytics | No | No | Not used | No analytics SDK is installed. If you add one, update both forms. |
 | Crash data | No today | No | Not used | Changes if you add crash reporting. See phase 8. |
 | IP address and device details | Handled by Google as your service provider | Not by you | Security and running the service | Firebase receives these when the app talks to it, as any server does. Read Firebase's own guidance for the forms: https://firebase.google.com/docs/ios/app-store-data-collection and https://firebase.google.com/docs/android/play-data-disclosure |

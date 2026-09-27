@@ -31,6 +31,7 @@ import {
   type EventFormData,
   type EventListing,
   type EventStats,
+  type SignalDay,
   type Venue,
 } from '@community/types';
 import { COLLECTIONS } from './collections';
@@ -372,7 +373,17 @@ export const createEventStore = (db: Firestore) => {
     });
   };
 
+  /**
+   * The anonymous counts for one event, one entry per day it was looked at.
+   * Hosts can read these for their own events only.
+   */
+  const loadSignalDays = async (eventId: string): Promise<SignalDay[]> => {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.EVENT_SIGNALS, eventId, 'days'));
+    return snapshot.docs.map((item) => ({ ...item.data(), day: item.id, eventId }) as SignalDay);
+  };
+
   return {
+    loadSignalDays,
     createClaim,
     loadMyClaims,
     withdrawClaim,

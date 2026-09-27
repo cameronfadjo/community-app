@@ -15,6 +15,7 @@ Address: [postal address]
 - An account is only needed to unlock perks. It needs a name, an email, and a password.
 - Your location is used on your phone while the app is open. We do not save it and it is not sent to our servers.
 - Reminders are worked out on your phone. What you follow stays on your phone.
+- We count how often events are looked at, so hosts know what works. A count is only a number. It says nothing about you.
 - We do not sell your information. We do not show ads. We do not track you across other apps or websites.
 - You can delete your account in the app at any time.
 - The app is for adults aged 18 and over.
@@ -53,6 +54,26 @@ We keep this so each perk is used once per person. This record shows that you we
 
 - Venues and event organizers see totals only, such as how many perks were unlocked. They do not see who unlocked them.
 - Other people using the app cannot see your perks.
+- The record is deleted 30 days after the event. The totals are kept.
+
+### Anonymous counts
+
+We count how often an event is looked at, so that venues and organizers can see what is working. We count three things:
+
+- an event's page being opened
+- "Take me there" being tapped, which opens directions
+- someone going for an event's perk
+
+A count is a number and nothing more. When the app adds to a count, it sends the event, the kind of action, and the day and hour. It does not send your name, email, account ID, a device ID, or your location. This is the same whether or not you have an account.
+
+We take these steps so that a count cannot point to a person:
+
+- Times are kept to the day and the hour, never the minute.
+- Your phone counts each action once per event per day. It remembers what it has counted today on the phone itself, and clears that list the next day.
+- Venues and organizers see when people looked only once an event has at least five views.
+- Venues and organizers see counts for their own events only.
+
+We do not use these counts to build a profile of you, and we could not: nothing in a count says who it came from.
 
 ### Information handled automatically
 
@@ -91,7 +112,7 @@ We use the information above to:
 
 - run your account
 - let you unlock and redeem perks, once each
-- give venues and organizers anonymous totals
+- give venues and organizers anonymous counts and totals
 - keep the service secure and stop misuse
 - reply when you contact us
 - meet legal duties
@@ -102,7 +123,7 @@ We do not use your information for advertising. We do not sell it. We do not sha
 
 **Our service provider.** The app runs on Firebase, a service from Google. Google stores account and perk records for us and handles sign in. Google acts on our instructions as a processor or service provider. Data may be stored and processed in the United States [confirm the Firestore region with the developer]. Google's terms for Firebase are at https://firebase.google.com/terms and its privacy information is at https://firebase.google.com/support/privacy.
 
-**Venues and organizers.** They receive totals only, with no names, emails, or account IDs.
+**Venues and organizers.** They receive counts and totals only, with no names, emails, or account IDs.
 
 **Legal reasons.** We may disclose information if the law requires it, or to protect the safety or rights of people. [Lawyer to review: describe how legal requests are handled, given the sensitivity of the perk records.]
 
@@ -113,8 +134,8 @@ We do not share your information with advertisers or data brokers.
 ## How long we keep information
 
 - Account details: until you delete your account.
-- Perk records: until you delete your account. [Decision needed: whether to delete perk records sooner, for example a set time after the event.]
-- Anonymous totals for venues: kept, since they do not identify anyone.
+- Perk records: deleted 30 days after the event, or when you delete your account if that is sooner.
+- Anonymous counts and totals for venues: kept, since they do not identify anyone.
 - Backups and logs: [retention period to be confirmed].
 
 ## How to delete your account
