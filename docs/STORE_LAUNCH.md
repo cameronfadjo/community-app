@@ -245,7 +245,7 @@ Sexual orientation: the app does not ask for it. But use of an LGBTQ+ app, and a
 - Apple: apps that let people create an account must let them start deletion in the app. This exists on the Account screen.
 - Google: needs the same, plus a web link where someone can ask for deletion without the app. You enter this link in the Data safety form.
 
-- [ ] **In the repo**: Build the web deletion page (phase 2). The simplest version explains the in-app steps and gives an email address for requests. A better version lets the person sign in on the web and delete.
+- [x] **In the repo**: Build the web deletion page (phase 2). **Done: `apps/website` has it at `/delete-account`, with the in-app steps and an email route. It needs the contact email filled in.** The simplest version explains the in-app steps and gives an email address for requests. A better version lets the person sign in on the web and delete.
 - [ ] **Cameron**: Decide how you confirm that an email request really comes from the account owner.
 - [ ] **In the repo**: Test that `deleteMyAccount` is deployed to the production project and removes the `users` document, the perk records, and the sign in.
 - [ ] **Cameron**: Partner and admin accounts cannot delete themselves. They are told to contact you. Make sure the support email works.

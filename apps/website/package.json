@@ -1,0 +1,18 @@
+{
+  "name": "@community/website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public website: Terms, Privacy, support, and account deletion pages",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "build:final": "node src/build.mjs --final",
+    "dev": "node src/build.mjs && node src/serve.mjs",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "marked": "^14.1.0",
+    "vitest": "^5.0.2"
+  }
+}
