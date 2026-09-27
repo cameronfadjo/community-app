@@ -2,12 +2,11 @@ import React from 'react';
 import {
   TouchableOpacity,
   Text,
-  StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONTS } from '../constants/theme';
 
 interface ButtonProps {
   title: string;
@@ -34,22 +33,21 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: BORDER_RADIUS.md,
+      borderRadius: BORDER_RADIUS.full,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
+      paddingHorizontal: SPACING.lg,
     };
 
     // Size
     if (size === 'small') {
-      baseStyle.paddingVertical = SPACING.sm;
+      baseStyle.minHeight = 44;
       baseStyle.paddingHorizontal = SPACING.md;
     } else if (size === 'large') {
-      baseStyle.paddingVertical = SPACING.lg;
-      baseStyle.paddingHorizontal = SPACING.xl;
+      baseStyle.minHeight = 60;
     } else {
-      baseStyle.paddingVertical = SPACING.md;
-      baseStyle.paddingHorizontal = SPACING.lg;
+      baseStyle.minHeight = 56;
     }
 
     // Full width
@@ -59,15 +57,19 @@ export const Button: React.FC<ButtonProps> = ({
 
     // Variant
     if (variant === 'primary') {
-      baseStyle.backgroundColor = disabled ? COLORS.border : COLORS.primary;
+      baseStyle.backgroundColor = COLORS.primary;
     } else if (variant === 'secondary') {
-      baseStyle.backgroundColor = disabled ? COLORS.border : COLORS.secondary;
+      baseStyle.backgroundColor = COLORS.text;
     } else if (variant === 'outline') {
-      baseStyle.backgroundColor = 'transparent';
-      baseStyle.borderWidth = 2;
-      baseStyle.borderColor = disabled ? COLORS.border : COLORS.primary;
+      baseStyle.backgroundColor = COLORS.surface;
+      baseStyle.borderWidth = 1;
+      baseStyle.borderColor = COLORS.border;
     } else if (variant === 'text') {
       baseStyle.backgroundColor = 'transparent';
+    }
+
+    if (disabled) {
+      baseStyle.opacity = 0.5;
     }
 
     return baseStyle;
@@ -75,44 +77,42 @@ export const Button: React.FC<ButtonProps> = ({
 
   const getTextStyle = (): TextStyle => {
     const baseStyle: TextStyle = {
-      fontWeight: FONT_WEIGHTS.semibold,
+      fontFamily: FONTS.bold,
     };
 
     // Size
     if (size === 'small') {
       baseStyle.fontSize = FONT_SIZES.sm;
-    } else if (size === 'large') {
-      baseStyle.fontSize = FONT_SIZES.lg;
     } else {
-      baseStyle.fontSize = FONT_SIZES.md;
+      baseStyle.fontSize = 17;
     }
 
     // Variant
     if (variant === 'primary' || variant === 'secondary') {
       baseStyle.color = COLORS.textInverse;
-    } else if (variant === 'outline' || variant === 'text') {
-      baseStyle.color = disabled ? COLORS.textTertiary : COLORS.primary;
-    }
-
-    if (disabled) {
-      baseStyle.color = COLORS.textTertiary;
+    } else if (variant === 'outline') {
+      baseStyle.color = COLORS.text;
+    } else {
+      baseStyle.color = COLORS.primaryDark;
     }
 
     return baseStyle;
   };
+
+  const spinnerColor =
+    variant === 'primary' || variant === 'secondary' ? COLORS.textInverse : COLORS.primary;
 
   return (
     <TouchableOpacity
       style={[getButtonStyle(), style]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' || variant === 'secondary' ? COLORS.textInverse : COLORS.primary}
-        />
+        <ActivityIndicator size="small" color={spinnerColor} />
       ) : (
         <Text style={[getTextStyle(), textStyle]}>{title}</Text>
       )}

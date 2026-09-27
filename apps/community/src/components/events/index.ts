@@ -1,3 +1,4 @@
+export * from './AccountButton';
 export * from './ActivityIcon';
 export * from './ActivityTile';
 export * from './BusyIndicator';

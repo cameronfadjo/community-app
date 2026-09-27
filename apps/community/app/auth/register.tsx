@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Input } from '../../src/components';
+import { AuthDivider, AuthMessage, AuthScreen, Button, Input } from '../../src/components';
 import { useAuth } from '../../src/hooks';
-import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '../../src/constants/theme';
+import { COLORS, FONTS } from '../../src/constants/theme';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -27,6 +19,7 @@ export default function RegisterScreen() {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [message, setMessage] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     const errors: {
@@ -36,32 +29,28 @@ export default function RegisterScreen() {
       confirmPassword?: string;
     } = {};
 
-    // Display name validation
     if (!displayName) {
-      errors.displayName = 'Name is required';
+      errors.displayName = 'Enter a name';
     } else if (displayName.length < 2) {
-      errors.displayName = 'Name must be at least 2 characters';
+      errors.displayName = 'Use at least 2 characters';
     }
 
-    // Email validation
     if (!email) {
-      errors.email = 'Email is required';
+      errors.email = 'Enter your email';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email';
+      errors.email = "That doesn't look like an email address";
     }
 
-    // Password validation
     if (!password) {
-      errors.password = 'Password is required';
+      errors.password = 'Choose a password';
     } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = 'Use at least 6 characters';
     }
 
-    // Confirm password validation
     if (!confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
+      errors.confirmPassword = 'Enter your password again';
     } else if (password !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = "The passwords don't match";
     }
 
     setFormErrors(errors);
@@ -69,265 +58,137 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    setMessage(null);
     if (!validateForm()) {
       return;
     }
 
     try {
+      clearError();
       await signUp(email, password, displayName);
-
-      Alert.alert(
-        'Account Created!',
-        'Welcome to Community. Check your email for a link to verify your account.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Navigation will be handled by auth state
-            },
-          },
-        ]
-      );
+      // Navigation will be handled by the root layout based on auth state
     } catch (err: any) {
-      Alert.alert(
-        'Registration Failed',
-        err.message || 'Unable to create account. Please try again.'
-      );
+      setMessage(err.message || "We couldn't create your account. Try again.");
     }
   };
 
-  const handleSignIn = () => {
-    router.back();
-  };
-
   const handleGoogleSignIn = async () => {
+    setMessage(null);
     try {
       clearError();
       await signInWithGoogle();
       // Navigation will be handled by the root layout based on auth state
     } catch (err: any) {
-      Alert.alert('Google Sign-In Failed', err.message || 'Please try again');
+      setMessage(err.message || "We couldn't sign you in with Google. Try again.");
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <AuthScreen
+      title="Create an account"
+      subtitle="It takes a minute, and it's only needed to unlock perks. You have no public profile."
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.logo}>🌈</Text>
-          <Text style={styles.title}>Join Community</Text>
-          <Text style={styles.subtitle}>
-            Create your account and discover LGBTQ+ experiences
-          </Text>
-        </View>
+      <AuthMessage message={message} />
 
-        <View style={styles.form}>
-          <View style={styles.signUpSection}>
-            <Text style={styles.sectionTitle}>Create account with</Text>
+      <Button
+        title="Continue with Google"
+        variant="outline"
+        onPress={handleGoogleSignIn}
+        loading={loading}
+        fullWidth
+      />
 
-            <Button
-              title="Continue with Google"
-              variant="outline"
-              onPress={handleGoogleSignIn}
-              loading={loading}
-              fullWidth
-              style={styles.googleButton}
-            />
+      <AuthDivider label="or use email" />
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or email</Text>
-              <View style={styles.dividerLine} />
-            </View>
+      <Input
+        label="Name"
+        placeholder="What should we call you?"
+        value={displayName}
+        onChangeText={setDisplayName}
+        autoCapitalize="words"
+        autoComplete="name"
+        error={formErrors.displayName}
+        helperText="Only you see this"
+      />
 
-            <Input
-              label="Display Name"
-              placeholder="How should we call you?"
-              value={displayName}
-              onChangeText={setDisplayName}
-              autoCapitalize="words"
-              autoComplete="name"
-              error={formErrors.displayName}
-            />
+      <Input
+        label="Email"
+        placeholder="you@example.com"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        error={formErrors.email}
+        helperText="We'll send a link to confirm it"
+      />
 
-            <Input
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              error={formErrors.email}
-              helperText="We'll send you a verification email"
-            />
+      <Input
+        label="Password"
+        placeholder="At least 6 characters"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        autoCapitalize="none"
+        autoComplete="password-new"
+        error={formErrors.password}
+      />
 
-            <Input
-              label="Password"
-              placeholder="Create a password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password-new"
-              error={formErrors.password}
-              helperText="At least 6 characters"
-            />
+      <Input
+        label="Password again"
+        placeholder="Enter it once more"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        autoCapitalize="none"
+        error={formErrors.confirmPassword}
+      />
 
-            <Input
-              label="Confirm Password"
-              placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              error={formErrors.confirmPassword}
-            />
+      <Button
+        title="Create account"
+        onPress={handleRegister}
+        loading={loading}
+        fullWidth
+        style={styles.submit}
+      />
 
-            <View style={styles.infoBox}>
-              <Text style={styles.infoText}>
-                You'll receive an email verification link
-              </Text>
-              <Text style={styles.infoText}>
-                An account is only needed to unlock perks. Browsing stays open to everyone.
-              </Text>
-            </View>
+      <View style={styles.other}>
+        <Text style={styles.otherText}>Already have an account?</Text>
+        <Button
+          title="Sign in"
+          variant="outline"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/auth/login'))}
+          fullWidth
+        />
+      </View>
 
-            <Button
-              title="Create Account with Email"
-              onPress={handleRegister}
-              loading={loading}
-              fullWidth
-              style={styles.registerButton}
-            />
-          </View>
-
-          <View style={styles.signInSection}>
-            <Text style={styles.signInText}>Already have an account?</Text>
-            <Button
-              title="Sign In"
-              variant="outline"
-              onPress={handleSignIn}
-              fullWidth
-              style={styles.signInButton}
-            />
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            By creating an account, you agree to our Terms of Service and
-            Privacy Policy
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Text style={styles.terms}>
+        By creating an account, you agree to our Terms of Service and Privacy Policy.
+      </Text>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
+  submit: {
+    marginTop: 8,
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: SPACING.lg,
-    paddingTop: SPACING.xxl,
+  other: {
+    marginTop: 32,
+    gap: 12,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  logo: {
-    fontSize: 64,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
+  otherText: {
+    fontFamily: FONTS.regular,
+    fontSize: 15,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  form: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  signUpSection: {
-    marginBottom: SPACING.xxl,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text,
-    marginBottom: SPACING.lg,
-    textAlign: 'center',
-  },
-  googleButton: {
-    marginBottom: SPACING.lg,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: SPACING.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    marginHorizontal: SPACING.md,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  infoBox: {
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.md,
-    borderRadius: 8,
-    marginBottom: SPACING.lg,
-  },
-  infoText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  registerButton: {
-    marginBottom: SPACING.md,
-  },
-  signInSection: {
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.divider,
-  },
-  signInText: {
-    fontSize: FONT_SIZES.md,
+  terms: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 18,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  signInButton: {
-    marginBottom: SPACING.md,
-  },
-  footer: {
-    marginTop: SPACING.xl,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textTertiary,
-    textAlign: 'center',
+    marginTop: 24,
   },
 });

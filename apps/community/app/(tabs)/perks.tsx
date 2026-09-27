@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ActivityIcon } from '../../src/components/events';
+import { AccountButton, ActivityIcon } from '../../src/components/events';
 import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { usePerkStore } from '../../src/store/perkStore';
@@ -58,9 +58,12 @@ export default function PerksScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View>
-          <Text style={styles.dayPart}>{formatDayPart(new Date(nowMs))}</Text>
-          <Text style={styles.heading}>Perks</Text>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.dayPart}>{formatDayPart(new Date(nowMs))}</Text>
+            <Text style={styles.heading}>Perks</Text>
+          </View>
+          <AccountButton />
         </View>
 
         {unlocked.map((perk) => (
@@ -152,6 +155,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
     gap: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   dayPart: {
     fontFamily: FONTS.medium,

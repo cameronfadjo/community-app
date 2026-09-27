@@ -1,21 +1,13 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Input } from '../../src/components';
+import { AuthDivider, AuthMessage, AuthScreen, Button, Input } from '../../src/components';
 import { useAuth } from '../../src/hooks';
-import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '../../src/constants/theme';
+import { COLORS, FONTS } from '../../src/constants/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, signInWithGoogle, loading, error, clearError } = useAuth();
+  const { signIn, signInWithGoogle, loading, clearError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,20 +15,19 @@ export default function LoginScreen() {
     email?: string;
     password?: string;
   }>({});
+  const [message, setMessage] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     const errors: { email?: string; password?: string } = {};
 
-    // Email validation
     if (!email) {
-      errors.email = 'Email is required';
+      errors.email = 'Enter your email';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email';
+      errors.email = "That doesn't look like an email address";
     }
 
-    // Password validation
     if (!password) {
-      errors.password = 'Password is required';
+      errors.password = 'Enter your password';
     }
 
     setFormErrors(errors);
@@ -44,6 +35,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    setMessage(null);
     if (!validateForm()) {
       return;
     }
@@ -53,215 +45,109 @@ export default function LoginScreen() {
       await signIn(email, password);
       // Navigation will be handled by the root layout based on auth state
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message || 'Please check your credentials and try again');
+      setMessage(err.message || "We couldn't sign you in. Check your details and try again.");
     }
   };
 
-  const handleForgotPassword = () => {
-    router.push('/auth/reset-password');
-  };
-
-  const handleSignUp = () => {
-    router.push('/auth/register');
-  };
-
   const handleGoogleSignIn = async () => {
+    setMessage(null);
     try {
       clearError();
       await signInWithGoogle();
       // Navigation will be handled by the root layout based on auth state
     } catch (err: any) {
-      Alert.alert('Google Sign-In Failed', err.message || 'Please try again');
+      setMessage(err.message || "We couldn't sign you in with Google. Try again.");
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <AuthScreen
+      title="Sign in"
+      subtitle="An account is only needed to unlock perks. Browsing stays open to everyone."
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.logo}>🌈</Text>
-          <Text style={styles.title}>Welcome to Community</Text>
-          <Text style={styles.subtitle}>
-            Discover amazing LGBTQ+ experiences worldwide
-          </Text>
-        </View>
+      <AuthMessage message={message} />
 
-        <View style={styles.form}>
-          <View style={styles.signInSection}>
-            <Text style={styles.sectionTitle}>Sign in with</Text>
+      <Button
+        title="Continue with Google"
+        variant="outline"
+        onPress={handleGoogleSignIn}
+        loading={loading}
+        fullWidth
+      />
 
-            <Button
-              title="Continue with Google"
-              variant="outline"
-              onPress={handleGoogleSignIn}
-              loading={loading}
-              fullWidth
-              style={styles.googleButton}
-            />
+      <AuthDivider label="or use email" />
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or email</Text>
-              <View style={styles.dividerLine} />
-            </View>
+      <Input
+        label="Email"
+        placeholder="you@example.com"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        error={formErrors.email}
+      />
 
-            <Input
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              error={formErrors.email}
-            />
+      <Input
+        label="Password"
+        placeholder="Your password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        autoCapitalize="none"
+        autoComplete="password"
+        error={formErrors.password}
+      />
 
-            <Input
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-              error={formErrors.password}
-            />
+      <Button
+        title="Forgot password?"
+        variant="text"
+        size="small"
+        onPress={() => router.push('/auth/reset-password')}
+        style={styles.forgot}
+      />
 
-            <Button
-              title="Forgot Password?"
-              variant="text"
-              size="small"
-              onPress={handleForgotPassword}
-              style={styles.forgotButton}
-            />
+      <Button title="Sign in" onPress={handleLogin} loading={loading} fullWidth />
 
-            <Button
-              title="Sign In with Email"
-              onPress={handleLogin}
-              loading={loading}
-              fullWidth
-              style={styles.loginButton}
-            />
-          </View>
+      <View style={styles.other}>
+        <Text style={styles.otherText}>New here?</Text>
+        <Button
+          title="Create an account"
+          variant="outline"
+          onPress={() => router.push('/auth/register')}
+          fullWidth
+        />
+      </View>
 
-          <View style={styles.signUpSection}>
-            <Text style={styles.signUpText}>Don't have an account?</Text>
-            <Button
-              title="Create Account"
-              variant="outline"
-              onPress={handleSignUp}
-              fullWidth
-              style={styles.signUpButton}
-            />
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Text style={styles.terms}>
+        By signing in, you agree to our Terms of Service and Privacy Policy.
+      </Text>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: SPACING.lg,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: SPACING.xxl,
-  },
-  logo: {
-    fontSize: 64,
-    marginBottom: SPACING.md,
-  },
-  title: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: FONT_WEIGHTS.bold,
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  form: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  signInSection: {
-    marginBottom: SPACING.xxl,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: FONT_WEIGHTS.semibold,
-    color: COLORS.text,
-    marginBottom: SPACING.lg,
-    textAlign: 'center',
-  },
-  googleButton: {
-    marginBottom: SPACING.lg,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: SPACING.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    marginHorizontal: SPACING.md,
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  forgotButton: {
+  forgot: {
     alignSelf: 'flex-end',
-    marginBottom: SPACING.md,
+    marginTop: -4,
+    marginBottom: 12,
   },
-  loginButton: {
-    marginBottom: SPACING.md,
+  other: {
+    marginTop: 32,
+    gap: 12,
   },
-  signUpSection: {
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.divider,
-  },
-  signUpText: {
-    fontSize: FONT_SIZES.md,
+  otherText: {
+    fontFamily: FONTS.regular,
+    fontSize: 15,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: SPACING.md,
   },
-  signUpButton: {
-    marginBottom: SPACING.md,
-  },
-  footer: {
-    marginTop: SPACING.xl,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textTertiary,
+  terms: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.textSecondary,
     textAlign: 'center',
+    marginTop: 24,
   },
 });

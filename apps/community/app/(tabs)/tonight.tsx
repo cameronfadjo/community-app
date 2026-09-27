@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ActivityTile, EventRow, PrimaryButton } from '../../src/components/events';
+import { AccountButton, ActivityTile, EventRow, PrimaryButton } from '../../src/components/events';
 import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { EVERYTHING_ID, useActivityLookup } from '../../src/hooks/useActivityLookup';
@@ -116,14 +116,17 @@ export default function TonightScreen() {
         <View>
           <View style={styles.header}>
             <Text style={styles.dayPart}>{formatDayPart(new Date(nowMs))}</Text>
-            <TouchableOpacity
-              style={styles.locationButton}
-              onPress={handleUseLocation}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="map-marker-outline" size={16} color={COLORS.info} />
-              <Text style={styles.locationText}>{userLocation ? 'Near you' : 'Use my location'}</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.locationButton}
+                onPress={handleUseLocation}
+                accessibilityRole="button"
+              >
+                <MaterialCommunityIcons name="map-marker-outline" size={16} color={COLORS.info} />
+                <Text style={styles.locationText}>{userLocation ? 'Near you' : 'Use my location'}</Text>
+              </TouchableOpacity>
+              <AccountButton />
+            </View>
           </View>
           <Text style={styles.heading}>What are you{'\n'}up for?</Text>
         </View>
@@ -237,6 +240,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   dayPart: {
     fontFamily: FONTS.medium,
