@@ -18,4 +18,7 @@ export const {
   confirmEvent,
   cancelUpcomingInSeries,
   confirmUpcomingInSeries,
+  loadClaims,
+  approveClaim,
+  rejectClaim,
 } = createEventStore(db);

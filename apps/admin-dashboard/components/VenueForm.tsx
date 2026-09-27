@@ -3,11 +3,14 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   MAX_VENUE_NAME_LENGTH,
+  SOCIAL_PLATFORMS,
+  normalizeSocialLink,
   VENUE_CATEGORIES,
   VENUE_CATEGORY_LABELS,
   getVerificationBlockers,
   parseCoordinates,
   validateVenueForm,
+  type SocialPlatform,
   type VenueCategory,
   type VenueDraft,
   type VenueFormData,
@@ -82,6 +85,7 @@ const toForm = (venue?: VenueDraft | null): VenueFormData => ({
   phone: venue?.contact?.phone ?? '',
   email: venue?.contact?.email ?? '',
   website: venue?.contact?.website ?? '',
+  social: { ...(venue?.contact?.social ?? {}) },
   accessibility: venue?.accessibility ?? '',
   notes: venue?.notes ?? '',
 });
@@ -92,8 +96,11 @@ export function VenueForm({ initial, submitLabel, onSubmit, onCancel }: VenueFor
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const set = (field: keyof VenueFormData) => (value: string) =>
+  const set = (field: Exclude<keyof VenueFormData, 'social'>) => (value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
+
+  const setSocial = (platform: SocialPlatform) => (value: string) =>
+    setForm((current) => ({ ...current, social: { ...current.social, [platform]: value } }));
 
   const position = parseCoordinates(form.coordinates);
   const blockers = getVerificationBlockers({
@@ -305,6 +312,51 @@ export function VenueForm({ initial, submitLabel, onSubmit, onCancel }: VenueFor
             placeholder="https://"
           />
         </Field>
+
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-gray-700">Social accounts (optional)</legend>
+          <p className="text-sm text-gray-500">
+            Type the account name or paste a link. These are where people check a venue before
+            they go.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {SOCIAL_PLATFORMS.map((platform) => {
+              const typed = form.social[platform.id] ?? '';
+              const link = normalizeSocialLink(platform.id, typed);
+              return (
+                <Field
+                  key={platform.id}
+                  label={platform.label}
+                  htmlFor={`social-${platform.id}`}
+                  error={errors.social?.[platform.id]}
+                  hint={
+                    link ? (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-700 underline"
+                      >
+                        Open to check it
+                      </a>
+                    ) : undefined
+                  }
+                >
+                  <input
+                    id={`social-${platform.id}`}
+                    className={inputClass}
+                    value={typed}
+                    onChange={(e) => setSocial(platform.id)(e.target.value)}
+                    placeholder={platform.placeholder}
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                  />
+                </Field>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <Field
           label="Notes for admins (optional)"

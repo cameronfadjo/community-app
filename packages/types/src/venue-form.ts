@@ -5,6 +5,7 @@
 
 import type { ModerationStatus } from './common';
 import type { VenueCategory } from './venue';
+import { validateSocialLinks, type SocialLinkErrors, type SocialLinks } from './venue-social';
 
 export interface Coordinates {
   latitude: number;
@@ -48,12 +49,16 @@ export interface VenueFormData {
   phone: string;
   email: string;
   website: string;
+  /** Handles or links, as typed */
+  social: SocialLinks;
   accessibility: string;
   /** For admins only. Never shown in the app. */
   notes: string;
 }
 
-export type VenueFormErrors = Partial<Record<keyof VenueFormData, string>>;
+export type VenueFormErrors = Partial<Record<Exclude<keyof VenueFormData, 'social'>, string>> & {
+  social?: SocialLinkErrors;
+};
 
 export const MAX_VENUE_NAME_LENGTH = 80;
 
@@ -97,6 +102,11 @@ export const validateVenueForm = (form: VenueFormData): VenueFormErrors => {
   }
   if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
     errors.email = "That doesn't look like an email address.";
+  }
+
+  const social = validateSocialLinks(form.social).errors;
+  if (Object.keys(social).length > 0) {
+    errors.social = social;
   }
 
   return errors;
@@ -257,7 +267,7 @@ export interface VenueLeadSeed {
     postalCode: string;
     coordinates: Coordinates | null;
   };
-  contact: { website?: string };
+  contact: { website?: string; social?: SocialLinks };
   images: string[];
   featured: boolean;
   accessibility: string;
@@ -312,6 +322,15 @@ export const buildVenueLead = (
     .join(' ');
 
   const website = (row.website ?? '').trim();
+  // Columns named after a platform, such as `instagram`. Bad ones are skipped.
+  const { links } = validateSocialLinks({
+    instagram: row.instagram,
+    facebook: row.facebook,
+    tiktok: row.tiktok,
+    x: row.x,
+    youtube: row.youtube,
+  });
+  const social = Object.keys(links).length > 0 ? { social: links } : {};
 
   return {
     id: slugify(`${name} ${city}`),
@@ -326,7 +345,7 @@ export const buildVenueLead = (
       postalCode: (row.postal_code ?? '').trim(),
       coordinates: parseCoordinates(`${row.latitude ?? ''}, ${row.longitude ?? ''}`),
     },
-    contact: website ? { website } : {},
+    contact: { ...(website ? { website } : {}), ...social },
     images: [],
     featured: false,
     accessibility: (row.accessibility ?? '').trim(),

@@ -23,6 +23,7 @@ const validForm = (overrides: Partial<VenueFormData> = {}): VenueFormData => ({
   phone: '',
   email: '',
   website: '',
+  social: {},
   accessibility: '',
   notes: '',
   ...overrides,
@@ -74,6 +75,13 @@ describe('validateVenueForm', () => {
 
   it('checks a map position when one is given', () => {
     expect(validateVenueForm(validForm({ coordinates: 'somewhere' })).coordinates).toBeDefined();
+  });
+
+  it('checks the social accounts when given', () => {
+    expect(validateVenueForm(validForm({ social: { instagram: '@chezest' } }))).toEqual({});
+    expect(
+      validateVenueForm(validForm({ social: { instagram: 'not an account' } })).social?.instagram
+    ).toBeDefined();
   });
 
   it('checks the website and email when given', () => {

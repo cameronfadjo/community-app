@@ -85,6 +85,8 @@ export interface EventListing {
   postedOnBehalfBy?: string;
   /** Where an admin got the details. For admins only. */
   detailsSource?: string;
+  /** When an admin handed the event over to its host */
+  handedOverAt?: Timestamp;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

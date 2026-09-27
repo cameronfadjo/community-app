@@ -243,6 +243,13 @@ export const filterEventsInWindow = <T extends { startsAtMs: number; endsAtMs: n
 ): T[] =>
   events.filter((event) => event.startsAtMs <= window.endMs && event.endsAtMs > window.startMs);
 
+/**
+ * True while something loaded earlier can be shown again without asking the
+ * server. Saves a read of every event each time a screen opens.
+ */
+export const isStillFresh = (loadedAtMs: number | null, nowMs: number, maxAgeMs: number): boolean =>
+  loadedAtMs !== null && nowMs >= loadedAtMs && nowMs - loadedAtMs < maxAgeMs;
+
 /** Fewer events than this today, and the home screen shows the week instead */
 export const MIN_EVENTS_FOR_TODAY = 3;
 

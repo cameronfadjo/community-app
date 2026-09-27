@@ -1,5 +1,6 @@
 import type { Timestamp, GeoPoint } from 'firebase/firestore';
 import type { ModerationStatus } from './common';
+import type { SocialLinks } from './venue-social';
 
 export const VENUE_CATEGORIES = [
   'bar',
@@ -42,6 +43,8 @@ export interface VenueContact {
   phone?: string;
   email?: string;
   website?: string;
+  /** Links to the venue's social accounts */
+  social?: SocialLinks;
 }
 
 /**

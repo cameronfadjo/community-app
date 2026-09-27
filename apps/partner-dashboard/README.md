@@ -12,6 +12,7 @@ Moderation of users, venues, and reviews lives in the admin dashboard
 - **Edit or cancel** their own events
 - **Copy** an event to post it again
 - **Add a perk** to an event and see how many were unlocked and used
+- **Claim events** that were listed for them before they joined
 
 Partners see totals for their perks, never who used them.
 
@@ -89,6 +90,7 @@ The dashboard will be available at `http://localhost:3001`
 | Your events | `/dashboard/events` |
 | Post an event | `/dashboard/events/new` |
 | Edit an event | `/dashboard/events/<id>` |
+| Claim events | `/dashboard/claim` |
 
 `/dashboard` leads to the events page.
 

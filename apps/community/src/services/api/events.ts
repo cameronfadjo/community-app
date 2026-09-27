@@ -4,7 +4,6 @@ import {
   EventFilters,
   EventListing,
   TimeWindow,
-  getTonightWindow,
   matchesEventFilters,
 } from '../../types';
 import {
@@ -63,16 +62,6 @@ export const getEventsInWindow = async (
     .filter((event) => event.endsAt.toMillis() > window.startMs)
     .filter((event) => matchesEventFilters(event, filters))
     .map((event) => withDistance(event, near));
-};
-
-/**
- * Get what's on tonight: from now until the night ends at 4 AM
- */
-export const getEventsTonight = async (
-  filters: EventFilters = {},
-  near?: Coordinates | null
-): Promise<EventWithDistance[]> => {
-  return await getEventsInWindow(getTonightWindow(new Date()), filters, near);
 };
 
 const withDistance = (event: EventListing, near?: Coordinates | null): EventWithDistance => {

@@ -17,4 +17,8 @@ export const {
   confirmEvent,
   cancelUpcomingInSeries,
   loadPerkCounts,
+  loadUpcomingEvents,
+  createClaim,
+  loadMyClaims,
+  withdrawClaim,
 } = createEventStore(db);

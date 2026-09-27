@@ -9,6 +9,7 @@ import {
   filterEventsInWindow,
   formatMinimumAge,
   getTodayLabel,
+  isStillFresh,
   expandWeeklyRecurrence,
   formatDistanceLabel,
   getEventTiming,
@@ -515,5 +516,25 @@ describe('getTodayLabel', () => {
 
   it('still says tonight in the small hours', () => {
     expect(getTodayLabel(new Date(2026, 8, 27, 1, 30))).toBe('tonight');
+  });
+});
+
+describe('isStillFresh', () => {
+  const FIVE_MINUTES = 5 * 60 * 1000;
+
+  it('is fresh within the time allowed', () => {
+    expect(isStillFresh(1000, 1000 + FIVE_MINUTES - 1, FIVE_MINUTES)).toBe(true);
+  });
+
+  it('goes stale once the time is up', () => {
+    expect(isStillFresh(1000, 1000 + FIVE_MINUTES, FIVE_MINUTES)).toBe(false);
+  });
+
+  it('is never fresh when nothing has been loaded', () => {
+    expect(isStillFresh(null, 1000, FIVE_MINUTES)).toBe(false);
+  });
+
+  it('is not fresh if the clock has gone backwards', () => {
+    expect(isStillFresh(5000, 1000, FIVE_MINUTES)).toBe(false);
   });
 });

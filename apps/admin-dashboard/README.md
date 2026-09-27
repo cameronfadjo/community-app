@@ -10,6 +10,8 @@ Where the app's owner keeps the app in order. Built with Next.js, on port
   be posted there.
 - **Events:** post an event for a host who doesn't have an account yet, mark
   it confirmed once the host says it's right, and take down any event.
+- **Claims:** hand an event over to its host once they have an account and
+  have asked for it.
 - **Accounts:** see who has an account, and block one.
 - **Overview:** totals for accounts, venues, and upcoming events.
 
@@ -37,6 +39,7 @@ from the Firebase console.
 | Overview | `/dashboard` |
 | Events | `/dashboard/events` |
 | Post for a host | `/dashboard/events/new` |
+| Claims | `/dashboard/claims` |
 | Accounts | `/dashboard/users` |
 | Venues | `/dashboard/venues` |
 | Add a venue | `/dashboard/venues/new` |
@@ -89,6 +92,30 @@ no account yet.
 - Until then, the app shows the event with "Not yet confirmed by the host".
 - When the host confirms, use "Host confirmed this date" or "Host confirmed
   every date" on the Events page.
+
+## Handing an event over to its host
+
+1. The host signs up in the app, and you grant them the partner role.
+2. In the partner dashboard they open "Claim events", find their event, and
+   say how they are involved.
+3. The claim appears under Claims here. Check it before handing over: the
+   host will be able to change or cancel the event.
+4. "Hand over" moves every upcoming date to the host, along with its perk
+   totals. The dashboard does this itself; no Cloud Function is involved.
+
+If the host said the listed details are right, handing over marks the event
+as confirmed. If not, it stays "not yet confirmed" until they correct it.
+
+Past dates and dates that were taken down stay where they are.
+
+## Social accounts
+
+The venue form takes Instagram, Facebook, TikTok, X, and YouTube. Type the
+account name or paste a link. Each is stored as a tidy link, and a link to
+the wrong site is turned away.
+
+To load them from a list, add a column named after the platform, such as
+`instagram`, to `venues.csv`.
 
 ## The map position
 

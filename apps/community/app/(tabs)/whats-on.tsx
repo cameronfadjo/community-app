@@ -142,7 +142,11 @@ export default function WhatsOnScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={loadTonight} tintColor={COLORS.primary} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => loadTonight({ force: true })}
+            tintColor={COLORS.primary}
+          />
         }
       >
         <View>
