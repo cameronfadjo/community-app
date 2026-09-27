@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
+import { isStorageNotSetUp } from './storageErrors';
 
 // Collections holding records tied to one person by a `userId` field.
 // Reviews and check-ins are from earlier versions of the app.
@@ -27,6 +28,17 @@ const deleteWhereUserIs = async (collection: string, uid: string): Promise<numbe
     snapshot.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
     deleted += snapshot.size;
+  }
+};
+
+const deleteUploadedFiles = async (uid: string): Promise<void> => {
+  try {
+    await admin.storage().bucket().deleteFiles({ prefix: `users/${uid}/` });
+  } catch (error) {
+    if (!isStorageNotSetUp(error)) {
+      throw error;
+    }
+    functions.logger.info('File storage is not set up, so there are no files to remove');
   }
 };
 
@@ -61,7 +73,7 @@ export const deleteMyAccount = functions.https.onCall(async (_data, context) => 
     }
 
     await admin.firestore().collection('users').doc(uid).delete();
-    await admin.storage().bucket().deleteFiles({ prefix: `users/${uid}/` });
+    await deleteUploadedFiles(uid);
 
     // Last, so a failure above can be retried while they can still sign in
     await admin.auth().deleteUser(uid);
