@@ -213,8 +213,8 @@ dashboards and passes.
 
 ### Still open
 
-- There is no screen for adding a venue. Venues must be added before
-  partners can post events.
+- Venues loaded from the Connecticut list need their addresses and map
+  positions confirmed before they can be approved
 - Busy level ("Filling up") is not yet calculated from real arrivals
 - The Map tab is a nearest-first list; an interactive map needs native setup
 - Event photo upload

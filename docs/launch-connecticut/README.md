@@ -16,8 +16,53 @@ a lead to confirm.
 | `recurring-events.csv` | 62 | Recurring events people can turn up to |
 | `annual-events.csv` | 10 | Once-a-year events |
 
-Each venue and event row has a `verified` column, set to `No`. Change it to
-`Yes` once someone at the venue or the organizer has confirmed the details.
+Each venue and event row has a `verified` column, set to `No`. Nothing in
+these files counts as verified. Venues are verified by an admin in the admin
+dashboard, after they are loaded.
+
+### Addresses were looked up, not confirmed
+
+The directory gave a street address for 4 venues. On September 27, 2026 the
+rest were looked up online, and a map position was found for each address.
+
+| | Venues |
+|---|---|
+| Address found | 70 of 72 |
+| Map position found | 69 of 72 |
+| Found on the venue's own site, or in two sources that agree | 64 |
+| Found in one source, or with conflicting addresses | 5 |
+| Not found, or doubtful | 3 |
+
+The extra columns in `venues.csv`:
+
+| Column | What it holds |
+|---|---|
+| `postal_code`, `latitude`, `longitude`, `website` | What was found |
+| `address_source` | The page the address came from |
+| `lookup_confidence` | `high`, `medium`, or `low` |
+| `lookup_status` | `open`, `moved` (the address is its new one), or `not_found` |
+| `lookup_note` | Anything that needs a person's attention |
+
+Map positions come from OpenStreetMap and point at the building, not
+always the front door. Perks unlock within 150 m, so check each one on the
+map before verifying.
+
+Check these before anything else:
+
+- **Gotham Citi Cafe, New Haven:** sources disagree on whether it is still
+  open.
+- **The Hazel, Stamford:** the only match is an apartment building. No
+  address is recorded.
+- **Space, Hartford:** could not be identified. No address is recorded.
+- **New Haven Pride Center** and **Bank Square Books** have moved. Older
+  listings show the old addresses.
+- **Love It Vegan, Afro-Caribbean Cultural Center, Tony's Flour Shop,
+  Kamora's Cultural Corner, CNTR:** sources conflict or the venue's own site
+  gives no address.
+
+One venue was removed. 30 Ash in Hartford is a private home and is no longer
+a public event space. The event held there is marked "To be confirmed".
+Chubby Dog has two locations, so it is now two rows.
 
 Left out on purpose, because the app is about going out: healthcare, mental
 health services, support groups, housing and food resources, salons, tattoo
@@ -57,7 +102,7 @@ an email, or a check of the organizer's website.
 |---|---|---|
 | Norwalk | 12 | 2 |
 | New Haven | 10 | 12 |
-| Hartford | 5 | 10 |
+| Hartford | 5 | 9 |
 | Stamford | 5 | 6 |
 | Middletown | 5 | 4 |
 | Putnam and Danielson | 6 | 3 |
@@ -187,7 +232,7 @@ Changes the app needs first. Each is listed because the data requires it.
 | ~~Monthly repeat, such as "3rd Saturday"~~ Done | 20 events repeat this way |
 | ~~Fall back to "this week" when today is thin~~ Done | About two events a night statewide |
 | Choose a town, and show driving distance | Events are spread across the state |
-| Seed venues from a file, with addresses and map positions | 72 venues; only 4 have a street address in the source |
+| ~~Seed venues from a file~~ Done. Each venue still needs verifying by an admin | Addresses and positions were looked up, not confirmed |
 | Let an admin post events on an organizer's behalf | Organizers don't have accounts yet |
 | Mark seeded events as unconfirmed, with their source | The details are unverified |
 | Let an organizer claim their event, and ask for removal | The directory offers removal to owners; the app should too |
@@ -199,7 +244,8 @@ Start in **New Haven**. It has the most venues (12) and the most events with a
 full schedule (8), and they are close together. Trans Haven alone hosts five
 monthly events at one address.
 
-1. Look up and confirm addresses for the 12 New Haven venues.
+1. Load the 13 New Haven venues, check each address and map position, and
+   mark each one verified.
 2. Contact the hosts to confirm schedules. Five conversations cover most of
    it: Trans Haven, Blue Orchid, Ascent Climbing, Strange Ways, and Possible
    Futures.
@@ -212,7 +258,7 @@ Target: about 15 confirmed recurring events, which is three or four a week.
 ### Stage 3: Add Hartford and Norwalk
 
 - **Hartford:** Chez Est, Sol y Luna, Real Art Ways, Out Film CT, Space,
-  the Trans Haven hangout at 30 Ash.
+  the Trans Haven hangout (its venue needs confirming).
 - **Norwalk:** Troupe 429 and Triangle Community Center. Two conversations
   cover twelve events.
 

@@ -92,11 +92,16 @@ Deploying functions or indexes after this clean-up asks whether to delete
 the ones that are no longer in the code (the review functions and old
 indexes). Answer yes.
 
-Then seed the starting activities from the repository root:
+Then seed the starting activities and venues from the repository root:
 
 ```bash
 pnpm --filter @community/admin-dashboard seed:activities
+pnpm --filter @community/admin-dashboard seed:venues --dry-run
+pnpm --filter @community/admin-dashboard seed:venues --town "New Haven"
 ```
+
+Venues arrive waiting and unverified. In the admin dashboard, check each
+one's details, mark it verified, then approve it.
 
 ### 2. Dashboards (Vercel — Recommended)
 

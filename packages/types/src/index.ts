@@ -10,6 +10,7 @@
 export * from './common';
 export * from './user';
 export * from './venue';
+export * from './venue-form';
 export * from './activity';
 export * from './event';
 export * from './event-utils';

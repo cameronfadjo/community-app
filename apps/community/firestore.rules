@@ -51,9 +51,21 @@ service cloud.firestore {
       // A list must ask for approved venues only. Admins read all of them.
       allow read: if resource.data.moderationStatus == 'approved' || isAdmin();
 
-      // Admins add and manage venues. Seeding uses the Admin SDK, which
-      // skips these rules.
-      allow write: if isAdmin();
+      // Admins add and manage venues. Loading from a list uses the Admin
+      // SDK, which skips these rules.
+      allow create, update: if isAdmin() && canBeListed(request.resource.data);
+      allow delete: if isAdmin();
+
+      // Events copy the venue's position and perks unlock by it, so a
+      // venue can't be approved until it has an address and a position
+      // and an admin has verified them
+      function canBeListed(venue) {
+        return venue.moderationStatus != 'approved' ||
+               (venue.detailsVerified == true &&
+                venue.location.coordinates is latlng &&
+                venue.location.address is string &&
+                venue.location.address.size() > 0);
+      }
     }
 
     // Activities collection (dancing, drag shows, book clubs, ...)
