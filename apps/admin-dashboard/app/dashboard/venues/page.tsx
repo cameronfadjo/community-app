@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import {
+  SOCIAL_PLATFORMS,
   VENUE_CATEGORY_LABELS,
   getApprovalBlockers,
   getVerificationBlockers,
@@ -289,6 +290,36 @@ export default function VenuesPage() {
                   <div>
                     <dt className="text-sm font-medium text-gray-700 mb-1">Description</dt>
                     <dd>{selected.description}</dd>
+                  </div>
+                )}
+                {(selected.contact?.website || selected.contact?.social) && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Online</dt>
+                    <dd className="flex flex-wrap gap-x-4 gap-y-1">
+                      {selected.contact.website && (
+                        <a
+                          href={selected.contact.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-700 underline"
+                        >
+                          Website
+                        </a>
+                      )}
+                      {SOCIAL_PLATFORMS.filter(
+                        (platform) => selected.contact.social?.[platform.id],
+                      ).map((platform) => (
+                        <a
+                          key={platform.id}
+                          href={selected.contact.social?.[platform.id]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-700 underline"
+                        >
+                          {platform.label}
+                        </a>
+                      ))}
+                    </dd>
                   </div>
                 )}
                 {selected.accessibility && (

@@ -11,7 +11,7 @@ import {
   getCurrentUser as getFirebaseUser,
 } from '../services/firebase/auth';
 import {
-  createUserProfile,
+  ensureUserProfile,
   getCurrentUserProfile,
   updateUserProfile,
 } from '../services/api/users';
@@ -57,17 +57,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // User is signed in, fetch their profile
         try {
           console.log('[AuthStore] Fetching user profile...');
-          let profile = await getCurrentUserProfile();
-
-          // If no profile exists, create one (shouldn't happen, but safety check)
-          if (!profile) {
-            console.log('[AuthStore] No profile found in listener, creating one...');
-            await createUserProfile({
-              displayName: firebaseUser.displayName || 'User',
-            });
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            profile = await getCurrentUserProfile();
-          }
+          // Creates the profile the first time someone signs in
+          const profile = await ensureUserProfile({
+            displayName: firebaseUser.displayName || undefined,
+          });
 
           console.log('[AuthStore] Profile fetched successfully');
           set({
@@ -137,25 +130,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       console.log('[AuthStore] Google sign-in successful, checking for profile...');
 
-      // Check if user profile exists
-      let profile = await getCurrentUserProfile();
-
-      // If no profile exists, create one (new user)
-      if (!profile) {
-        console.log('[AuthStore] No profile found, creating new profile...');
-        await createUserProfile({
-          displayName: userCredential.user.displayName || 'Google User',
-        });
-
-        // Wait a moment for the profile to be created
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Fetch the newly created profile
-        profile = await getCurrentUserProfile();
-        console.log('[AuthStore] New profile created');
-      } else {
-        console.log('[AuthStore] Existing profile found');
-      }
+      const profile = await ensureUserProfile({
+        displayName: userCredential.user.displayName || undefined,
+        // Nobody reaches sign-in without confirming their age on the welcome screen
+        confirmedAdultAt: Timestamp.now(),
+      });
 
       set({
         firebaseUser: userCredential.user,
@@ -181,23 +160,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Register with Firebase Auth
       const userCredential = await registerWithEmail(email, password, displayName);
 
-      // Create user profile in Firestore (Cloud Function will handle this)
-      // Wait a moment for the Cloud Function to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Fetch the created profile
-      let profile = await getCurrentUserProfile();
-
       // The sign-up form only gets this far once the person has confirmed
-      // they are an adult. Keep a record; sign-up still succeeds without it.
-      if (profile) {
-        try {
-          await updateUserProfile(userCredential.user.uid, { confirmedAdultAt: Timestamp.now() });
-          profile = { ...profile, confirmedAdultAt: Timestamp.now() };
-        } catch (e) {
-          console.error('[Auth] Could not record the age confirmation:', e);
-        }
-      }
+      // they are an adult, so the profile records when
+      const profile = await ensureUserProfile({
+        displayName,
+        confirmedAdultAt: Timestamp.now(),
+      });
 
       set({
         firebaseUser: userCredential.user,

@@ -218,11 +218,15 @@ dashboards and passes.
 - Admins can post an event for a host. The app shows it as not yet
   confirmed until the host says the details are right.
 - The event form and the event data code are shared by both dashboards.
+- A host can claim events posted for them. An admin checks the claim and
+  hands the events over, with their perk totals.
+- The app creates each person's profile itself, so the `onUserCreate`
+  function was removed. Two functions remain.
+- The app loads events once and reuses them, to cut database reads.
+- Venues can carry links to their social accounts.
 
 ### Still open
 
-- Handing an event an admin posted over to its host, once they have an
-  account
 - Venues loaded from the Connecticut list need their addresses and map
   positions confirmed before they can be approved
 - Busy level ("Filling up") is not yet calculated from real arrivals

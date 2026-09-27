@@ -8,24 +8,70 @@ import {
 import { getCurrentUser } from '../firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 
+export interface ProfileDetails {
+  displayName?: string;
+  /** Set at sign-up, once the person has confirmed they are 18 or older */
+  confirmedAdultAt?: Timestamp;
+}
+
 /**
- * Create a new user profile in Firestore
- * This is typically called after Firebase Auth user creation
+ * Create the signed-in person's profile. The app does this itself at
+ * sign-up; the security rules make sure people can only create their own.
  */
-export const createUserProfile = async (userData: Partial<User>): Promise<void> => {
+export const createUserProfile = async (details: ProfileDetails = {}): Promise<void> => {
   const currentUser = getCurrentUser();
   if (!currentUser) {
     throw new Error('No authenticated user');
   }
 
-  const userProfile: Omit<User, 'createdAt' | 'updatedAt'> = {
+  await createDocument(COLLECTIONS.USERS, currentUser.uid, {
     uid: currentUser.uid,
     email: currentUser.email || '',
-    displayName: userData.displayName || currentUser.displayName || 'Anonymous',
+    displayName: details.displayName || currentUser.displayName || 'Anonymous',
     moderationStatus: 'approved',
+    ...(details.confirmedAdultAt ? { confirmedAdultAt: details.confirmedAdultAt } : {}),
+  });
+};
+
+// Sign-up and the sign-in listener can both ask at once. Taking turns stops
+// one from creating the profile over the other.
+let profileQueue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Returns the signed-in person's profile, creating it if this is their
+ * first time, and filling in any details it is missing.
+ */
+export const ensureUserProfile = (details: ProfileDetails = {}): Promise<User | null> => {
+  const run = async (): Promise<User | null> => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return null;
+    }
+
+    const existing = await getUserProfile(currentUser.uid);
+    if (!existing) {
+      await createUserProfile(details);
+      return await getUserProfile(currentUser.uid);
+    }
+
+    const missing: Partial<User> = {};
+    if (details.displayName && existing.displayName !== details.displayName) {
+      missing.displayName = details.displayName;
+    }
+    if (details.confirmedAdultAt && !existing.confirmedAdultAt) {
+      missing.confirmedAdultAt = details.confirmedAdultAt;
+    }
+    if (Object.keys(missing).length === 0) {
+      return existing;
+    }
+
+    await updateDocument(COLLECTIONS.USERS, currentUser.uid, missing);
+    return { ...existing, ...missing };
   };
 
-  await createDocument(COLLECTIONS.USERS, currentUser.uid, userProfile);
+  const result = profileQueue.then(run, run);
+  profileQueue = result.catch(() => undefined);
+  return result;
 };
 
 /**

@@ -45,6 +45,20 @@ the screens are not empty. A release build never shows them.
 - **`functions/`** holds the Cloud Functions. It has its own `package.json`
   and is installed with `npm`, not `pnpm`.
 
+## Keeping costs down
+
+The database charges for each record read, so the app reads as little as it
+can.
+
+- Events are loaded once, for the next twelve days, and shared by every
+  screen and by the nudges.
+- Opening another screen within five minutes reuses what is loaded. Pull
+  down on What's on to load again.
+- The list of activities is kept on the phone for a day.
+
+Two Cloud Functions remain, both because a phone can't be trusted with the
+job: keeping perk totals, and deleting an account.
+
 ## Privacy by design
 
 - Browsing needs no account.

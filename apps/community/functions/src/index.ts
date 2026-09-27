@@ -5,6 +5,5 @@ import * as admin from 'firebase-admin';
 admin.initializeApp();
 
 // Export all cloud functions
-export { onUserCreate } from './auth/onUserCreate';
 export { onPerkRedemptionWrite } from './perks/onPerkRedemptionWrite';
 export { deleteMyAccount } from './account/deleteMyAccount';

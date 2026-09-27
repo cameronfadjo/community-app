@@ -7,7 +7,7 @@ import {
   PlannedNotification,
   buildNotificationPlan,
 } from '../types';
-import { EventWithDistance, getEventsInWindow } from '../services/api/events';
+import { EventWithDistance } from '../services/api/events';
 import {
   cancelScheduledNotifications,
   hasNotificationPermission,
@@ -17,10 +17,6 @@ import { useEventStore } from './eventStore';
 
 // Kept on the phone only
 const STORAGE_KEY = 'community.notificationPrefs';
-
-// Far enough ahead to cover next Thursday's lineup and the weekend after it
-const LOOK_AHEAD_DAYS = 12;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 interface NotificationState {
   prefs: NotificationPrefs;
@@ -45,23 +41,11 @@ const toPlanEvent = (event: EventWithDistance): PlanEvent => ({
   perkLabel: event.perkLabel,
 });
 
+// Uses the events the screens have already loaded, so nudges cost no
+// extra reads
 const loadUpcomingEvents = async (): Promise<EventWithDistance[]> => {
-  // Activities and the sample-data flag come from the first load
-  if (!useEventStore.getState().loaded) {
-    await useEventStore.getState().loadTonight();
-  }
-
-  const { usingSampleData, tonightEvents, userLocation } = useEventStore.getState();
-  if (usingSampleData) {
-    return tonightEvents;
-  }
-
-  const nowMs = Date.now();
-  return await getEventsInWindow(
-    { startMs: nowMs, endMs: nowMs + LOOK_AHEAD_DAYS * MS_PER_DAY },
-    {},
-    userLocation
-  );
+  await useEventStore.getState().loadTonight();
+  return useEventStore.getState().upcomingEvents;
 };
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({

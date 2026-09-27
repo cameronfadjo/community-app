@@ -24,6 +24,7 @@ const isUnconfirmed = (event: EventListing) =>
   getHostConfirmation({
     confirmedAtMs: event.confirmedAt?.toMillis(),
     postedOnBehalfBy: event.postedOnBehalfBy,
+    handedOverAtMs: event.handedOverAt?.toMillis(),
   }) === 'unconfirmed';
 
 const matches = (event: EventListing, filter: Filter) => {

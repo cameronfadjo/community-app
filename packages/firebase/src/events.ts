@@ -14,6 +14,8 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
+  deleteDoc,
   updateDoc,
   where,
   writeBatch,
@@ -22,7 +24,10 @@ import {
 import {
   DEFAULT_ACTIVITIES,
   buildEventOccurrences,
+  getClaimId,
   type ActivitySeed,
+  type ClaimableGroup,
+  type EventClaim,
   type EventFormData,
   type EventListing,
   type EventStats,
@@ -259,7 +264,121 @@ export const createEventStore = (db: Firestore) => {
     return counts;
   };
 
+  const claims = () => collection(db, COLLECTIONS.EVENT_CLAIMS);
+
+  const toClaim = (item: { id: string; data: () => unknown }): EventClaim =>
+    ({ ...(item.data() as object), id: item.id }) as EventClaim;
+
+  const newestFirst = (a: EventClaim, b: EventClaim) =>
+    (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0);
+
+  /** A host asks to take over an event, or every date of a repeating one */
+  const createClaim = async (
+    group: ClaimableGroup,
+    partner: { uid: string; email: string },
+    form: { note: string; detailsCorrect: boolean },
+  ): Promise<void> => {
+    const id = getClaimId(group.claimKey, partner.uid);
+    await setDoc(doc(claims(), id), {
+      id,
+      claimKey: group.claimKey,
+      eventTitle: group.title,
+      venueName: group.venueName,
+      ...withoutEmpty({ organizerName: group.organizerName }),
+      partnerId: partner.uid,
+      partnerEmail: partner.email,
+      note: form.note.trim(),
+      detailsCorrect: form.detailsCorrect,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const loadMyClaims = async (partnerId: string): Promise<EventClaim[]> => {
+    const snapshot = await getDocs(query(claims(), where('partnerId', '==', partnerId)));
+    return snapshot.docs.map(toClaim).sort(newestFirst);
+  };
+
+  /** A host takes back a claim nobody has decided yet */
+  const withdrawClaim = async (claimId: string): Promise<void> => {
+    await deleteDoc(doc(claims(), claimId));
+  };
+
+  const loadClaims = async (status: EventClaim['status']): Promise<EventClaim[]> => {
+    const snapshot = await getDocs(query(claims(), where('status', '==', status)));
+    return snapshot.docs.map(toClaim).sort(newestFirst);
+  };
+
+  /** The dates a claim covers that an admin still holds and that haven't started */
+  const loadEventsForClaim = async (claimKey: string, nowMs: number): Promise<EventListing[]> => {
+    const [series, single] = await Promise.all([
+      getDocs(query(events(), where('seriesId', '==', claimKey))),
+      getDoc(doc(events(), claimKey)),
+    ]);
+    const found = series.docs.map(toEvent);
+    if (single.exists()) {
+      found.push(toEvent(single));
+    }
+    return found.filter(
+      (event) =>
+        Boolean(event.postedOnBehalfBy) &&
+        event.status === 'scheduled' &&
+        event.startsAt.toMillis() > nowMs,
+    );
+  };
+
+  /**
+   * Hands the claimed events over to the host and records the decision.
+   * Perk totals move with them, since a host can read only the totals
+   * that carry their ID. The host confirms the details by claiming only if
+   * they said the details are right. Returns how many dates were handed over.
+   */
+  const approveClaim = async (claim: EventClaim, adminId: string, nowMs: number): Promise<number> => {
+    const covered = await loadEventsForClaim(claim.claimKey, nowMs);
+    const stats = await Promise.all(
+      covered.map((event) => getDoc(doc(db, COLLECTIONS.EVENT_STATS, event.id))),
+    );
+    const batch = writeBatch(db);
+
+    // An event has totals only once someone has unlocked its perk
+    for (const total of stats.filter((item) => item.exists())) {
+      batch.update(total.ref, { organizerId: claim.partnerId, updatedAt: serverTimestamp() });
+    }
+
+    for (const event of covered) {
+      batch.update(doc(events(), event.id), {
+        organizerId: claim.partnerId,
+        postedOnBehalfBy: deleteField(),
+        handedOverAt: serverTimestamp(),
+        ...(claim.detailsCorrect ? { confirmedAt: serverTimestamp() } : {}),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    batch.update(doc(claims(), claim.id), {
+      status: 'approved',
+      decidedAt: serverTimestamp(),
+      decidedBy: adminId,
+    });
+
+    await batch.commit();
+    return covered.length;
+  };
+
+  const rejectClaim = async (claimId: string, adminId: string): Promise<void> => {
+    await updateDoc(doc(claims(), claimId), {
+      status: 'rejected',
+      decidedAt: serverTimestamp(),
+      decidedBy: adminId,
+    });
+  };
+
   return {
+    createClaim,
+    loadMyClaims,
+    withdrawClaim,
+    loadClaims,
+    approveClaim,
+    rejectClaim,
     loadActivityOptions,
     loadApprovedVenues,
     loadMyEvents,

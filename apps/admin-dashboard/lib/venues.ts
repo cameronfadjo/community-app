@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { COLLECTIONS } from '@community/firebase';
 import {
+  validateSocialLinks,
   detailsNeedVerifyingAgain,
   getVerificationBlockers,
   parseCoordinates,
@@ -43,13 +44,17 @@ export async function loadVenue(venueId: string): Promise<VenueDraft | null> {
 /** The stored fields a form produces. Empty optional text is left out. */
 const toFields = (form: VenueFormData) => {
   const position = parseCoordinates(form.coordinates);
-  const contact = Object.fromEntries(
-    Object.entries({
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      website: form.website.trim(),
-    }).filter(([, value]) => value),
-  );
+  const { links } = validateSocialLinks(form.social);
+  const contact = {
+    ...Object.fromEntries(
+      Object.entries({
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        website: form.website.trim(),
+      }).filter(([, value]) => value),
+    ),
+    ...(Object.keys(links).length > 0 ? { social: links } : {}),
+  };
 
   return {
     name: form.name.trim(),

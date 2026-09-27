@@ -164,14 +164,18 @@ export const validateEventForm = (
 export type HostConfirmation = 'confirmed' | 'unconfirmed';
 
 /**
- * Whether the host stands behind the details. An event is unconfirmed only
- * when an admin posted it for a host who hasn't confirmed it yet.
+ * Whether the host stands behind the details. An event is unconfirmed when
+ * an admin posted it and the host hasn't confirmed it yet, including after
+ * it has been handed over to them.
  */
 export const getHostConfirmation = (event: {
   confirmedAtMs?: number;
   postedOnBehalfBy?: string;
-}): HostConfirmation =>
-  event.postedOnBehalfBy && event.confirmedAtMs === undefined ? 'unconfirmed' : 'confirmed';
+  handedOverAtMs?: number;
+}): HostConfirmation => {
+  const startedWithAnAdmin = Boolean(event.postedOnBehalfBy) || event.handedOverAtMs !== undefined;
+  return startedWithAnAdmin && event.confirmedAtMs === undefined ? 'unconfirmed' : 'confirmed';
+};
 
 export interface EventOccurrence {
   startsAtMs: number;

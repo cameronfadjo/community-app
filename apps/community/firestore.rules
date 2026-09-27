@@ -150,10 +150,38 @@ service cloud.firestore {
       }
     }
 
-    // Perk totals per event, written only by Cloud Functions
+    // A host asking to take over events an admin posted for them
+    match /eventClaims/{claimId} {
+      allow read: if isOwner(resource.data.partnerId) || isAdmin();
+
+      // Partners ask for themselves, once per event or series
+      allow create: if isPartner() &&
+                       request.resource.data.partnerId == request.auth.uid &&
+                       request.resource.data.partnerEmail == request.auth.token.email &&
+                       claimId == request.resource.data.claimKey + '_' + request.auth.uid &&
+                       request.resource.data.status == 'pending' &&
+                       request.resource.data.note is string &&
+                       request.resource.data.note.size() > 0 &&
+                       request.resource.data.note.size() <= 500;
+
+      // Only an admin decides
+      allow update: if isAdmin();
+
+      // A host can take back a claim nobody has decided yet
+      allow delete: if isAdmin() ||
+                       (isOwner(resource.data.partnerId) && resource.data.status == 'pending');
+    }
+
+    // Perk totals per event. The numbers are written only by Cloud Functions.
     match /eventStats/{eventId} {
       allow read: if isOwner(resource.data.organizerId) || isAdmin();
-      allow write: if false;
+
+      // When an admin hands an event over to its host, the totals follow.
+      // Nothing else about them can be changed.
+      allow update: if isAdmin() &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['organizerId', 'updatedAt']);
+      allow create, delete: if false;
     }
   }
 }

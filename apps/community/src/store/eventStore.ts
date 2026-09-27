@@ -1,13 +1,36 @@
 import { create } from 'zustand';
-import { Activity, EventListing, HomeScope, chooseHomeScope, getTonightWindow, getWhenWindow } from '../types';
+import {
+  Activity,
+  EventListing,
+  HomeScope,
+  chooseHomeScope,
+  getTonightWindow,
+  getWhenWindow,
+  isStillFresh,
+} from '../types';
 import { getActivities } from '../services/api/activities';
 import { Coordinates, EventWithDistance, getEvent, getEventsInWindow } from '../services/api/events';
 import { eventsInWindow } from '../utils/events';
 import { calculateDistance } from '../services/firebase/geolocation';
 import { buildSampleActivities, buildSampleEvents } from '../data/sampleEvents';
 
+// Events are loaded once and shared by every screen and by the nudges.
+// Far enough ahead to cover next Thursday's lineup and the weekend after it.
+export const LOOK_AHEAD_DAYS = 12;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Opening another screen within this time reuses what is already loaded
+const KEEP_FOR_MS = 5 * 60 * 1000;
+
+interface LoadOptions {
+  /** Ask the server even if what is loaded is recent. Used by pull to refresh. */
+  force?: boolean;
+}
+
 interface EventState {
   activities: Activity[];
+  /** Everything on in the next twelve days, soonest first. Used for nudges. */
+  upcomingEvents: EventWithDistance[];
   /** Everything on in the next seven days, soonest first */
   weekEvents: EventWithDistance[];
   /** The part of the week that is on today, until the night ends */
@@ -24,7 +47,7 @@ interface EventState {
   usingSampleData: boolean;
 
   setUserLocation: (location: Coordinates | null) => void;
-  loadTonight: () => Promise<void>;
+  loadTonight: (options?: LoadOptions) => Promise<void>;
   findEvent: (eventId: string) => Promise<EventWithDistance | null>;
   getActivity: (activityId: string) => Activity | undefined;
 }
@@ -44,10 +67,13 @@ const addDistance = (events: EventListing[], near: Coordinates | null): EventWit
       : event
   );
 
-const splitForHome = (weekEvents: EventWithDistance[]) => {
-  const tonightEvents = eventsInWindow(weekEvents, getTonightWindow(new Date()));
+const splitForHome = (upcomingEvents: EventWithDistance[]) => {
+  const now = new Date();
+  const weekEvents = eventsInWindow(upcomingEvents, getWhenWindow('week', now));
+  const tonightEvents = eventsInWindow(weekEvents, getTonightWindow(now));
   const homeScope = chooseHomeScope(tonightEvents.length);
   return {
+    upcomingEvents,
     weekEvents,
     tonightEvents,
     homeScope,
@@ -57,9 +83,11 @@ const splitForHome = (weekEvents: EventWithDistance[]) => {
 
 // Shared by callers that ask while a load is already under way
 let loadInFlight: Promise<void> | null = null;
+let loadedAtMs: number | null = null;
 
 export const useEventStore = create<EventState>((set, get) => ({
   activities: [],
+  upcomingEvents: [],
   weekEvents: [],
   tonightEvents: [],
   homeScope: 'today',
@@ -73,13 +101,18 @@ export const useEventStore = create<EventState>((set, get) => ({
   setUserLocation: (location) => {
     set({
       userLocation: location,
-      ...splitForHome(addDistance(get().weekEvents, location)),
+      ...splitForHome(addDistance(get().upcomingEvents, location)),
     });
   },
 
-  loadTonight: () => {
+  loadTonight: ({ force = false } = {}) => {
     if (loadInFlight) {
       return loadInFlight;
+    }
+    if (!force && isStillFresh(loadedAtMs, Date.now(), KEEP_FOR_MS)) {
+      // The day may have turned since, so work out today and the week again
+      set(splitForHome(get().upcomingEvents));
+      return Promise.resolve();
     }
 
     const load = async () => {
@@ -92,8 +125,12 @@ export const useEventStore = create<EventState>((set, get) => ({
 
       try {
         [activities, events] = await Promise.all([
-          getActivities(),
-          getEventsInWindow(getWhenWindow('week', new Date()), {}, userLocation),
+          getActivities({ fresh: force }),
+          getEventsInWindow(
+            { startMs: Date.now(), endMs: Date.now() + LOOK_AHEAD_DAYS * MS_PER_DAY },
+            {},
+            userLocation
+          ),
         ]);
       } catch (e: any) {
         console.error('[EventStore] Error loading events:', e);
@@ -112,6 +149,9 @@ export const useEventStore = create<EventState>((set, get) => ({
         error = null;
       }
 
+      // A failed load is tried again next time, not remembered
+      loadedAtMs = error ? null : Date.now();
+
       set({
         activities,
         ...splitForHome(events),
@@ -129,7 +169,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   findEvent: async (eventId) => {
-    const loaded = get().weekEvents.find((event) => event.id === eventId);
+    const loaded = get().upcomingEvents.find((event) => event.id === eventId);
     if (loaded) {
       return loaded;
     }

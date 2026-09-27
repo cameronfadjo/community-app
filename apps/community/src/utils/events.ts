@@ -24,6 +24,7 @@ export const isUnconfirmed = (event: EventListing): boolean =>
   getHostConfirmation({
     confirmedAtMs: event.confirmedAt?.toMillis(),
     postedOnBehalfBy: event.postedOnBehalfBy,
+    handedOverAtMs: event.handedOverAt?.toMillis(),
   }) === 'unconfirmed';
 
 /** Events running or starting inside the window, in the order given */
