@@ -6,6 +6,8 @@
 
 import type { EventStatus } from './event';
 import { NIGHT_ENDS_AT_HOUR, formatDistanceLabel, getWhenWindow } from './event-utils';
+import { planSavedReminders } from './reminders';
+import type { SavedEvent } from './saved';
 
 export const STARTING_SOON_NOTICE_MINUTES = 60;
 export const MAX_STARTING_SOON_PER_NIGHT = 2;
@@ -24,6 +26,7 @@ const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 
 export interface NotificationPrefs {
+  /** Nudges about events the person hasn't saved. Off until they ask. */
   enabled: boolean;
   /** An hour before events the person would like */
   startingSoon: boolean;
@@ -33,6 +36,8 @@ export interface NotificationPrefs {
   discreet: boolean;
   /** Activities to hear about. Empty means everything. */
   activityIds: string[];
+  /** A reminder before each event the person has saved. Separate from nudges. */
+  savedReminders: boolean;
 }
 
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
@@ -41,6 +46,8 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   weekendLineup: true,
   discreet: false,
   activityIds: [],
+  // Saving an event is asking to be reminded of it
+  savedReminders: true,
 };
 
 export interface PlanEvent {
@@ -55,7 +62,7 @@ export interface PlanEvent {
   perkLabel?: string;
 }
 
-export type PlannedNotificationKind = 'starting_soon' | 'weekend_lineup';
+export type PlannedNotificationKind = 'starting_soon' | 'weekend_lineup' | 'saved_reminder';
 
 export interface PlannedNotification {
   id: string;
@@ -69,6 +76,8 @@ export interface PlannedNotification {
 
 export interface NotificationPlanInput {
   events: PlanEvent[];
+  /** Events the person has saved, which get a reminder of their own */
+  saved?: SavedEvent[];
   prefs: NotificationPrefs;
   /** Display names keyed by activity ID */
   activityLabels: Record<string, string>;
@@ -208,8 +217,7 @@ const planWeekendLineup = (
   ];
 };
 
-/** Every notification to schedule, soonest first */
-export const buildNotificationPlan = ({
+const planNudges = ({
   events,
   prefs,
   activityLabels,
@@ -224,7 +232,19 @@ export const buildNotificationPlan = ({
   return [
     ...(prefs.startingSoon ? planStartingSoon(relevant, prefs, nowMs) : []),
     ...(prefs.weekendLineup ? planWeekendLineup(relevant, prefs, activityLabels, nowMs) : []),
-  ]
-    .sort((a, b) => a.fireAtMs - b.fireAtMs)
-    .slice(0, MAX_PLANNED_NOTIFICATIONS);
+  ].sort((a, b) => a.fireAtMs - b.fireAtMs);
+};
+
+/**
+ * Every notification to schedule, soonest first. Reminders for saved
+ * events come before nudges when there isn't room for both, since the
+ * person asked for those.
+ */
+export const buildNotificationPlan = (input: NotificationPlanInput): PlannedNotification[] => {
+  const { saved = [], prefs, nowMs } = input;
+  const reminders = prefs.savedReminders ? planSavedReminders(saved, prefs, nowMs) : [];
+
+  return [...reminders, ...planNudges(input)]
+    .slice(0, MAX_PLANNED_NOTIFICATIONS)
+    .sort((a, b) => a.fireAtMs - b.fireAtMs);
 };

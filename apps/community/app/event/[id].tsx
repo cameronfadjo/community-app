@@ -9,16 +9,25 @@ import {
   BusyIndicator,
   PerkCard,
   PrimaryButton,
+  ReminderNote,
+  SaveButton,
   getTagLabels,
 } from '../../src/components/events';
 import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { useActivityLookup } from '../../src/hooks/useActivityLookup';
+import { useSavedEvents } from '../../src/hooks/useSavedEvents';
 import { EventWithDistance } from '../../src/services/api/events';
 import { openDirections } from '../../src/utils/location';
 import { countSignal } from '../../src/services/api/signals';
 import { formatClock, formatCover, formatTimingBadge, getTimingFor, isUnconfirmed } from '../../src/utils/events';
-import { formatDistanceLabel, formatMinimumAge, getTodayLabel } from '../../src/types';
+import {
+  formatDayShort,
+  formatDistanceLabel,
+  formatMinimumAge,
+  getTodayLabel,
+  isSameNight,
+} from '../../src/types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../src/constants/theme';
 
 const BUSY_HEADLINES = {
@@ -31,7 +40,8 @@ export default function EventDetailScreen() {
   const router = useRouter();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { forActivity, forEvent } = useActivityLookup();
-  const { findEvent, tonightEvents, loaded, loadTonight } = useEventStore();
+  const { findEvent, upcomingEvents, loaded, loadTonight } = useEventStore();
+  const { isSaved, toggleSaved, reminderStatus, turnOnReminders } = useSavedEvents();
 
   const [event, setEvent] = useState<EventWithDistance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,16 +108,24 @@ export default function EventDetailScreen() {
   const image = event.images[0];
   const tagLabels = getTagLabels(event.tags, event.audience);
 
+  const saved = isSaved(event.id);
+  const isOver = event.status === 'cancelled' || timing.state === 'ended';
+
   const facts = [
     formatMinimumAge(event.tags.minimumAge),
     event.organizerName ? `Hosted by ${event.organizerName}` : null,
   ].filter((fact): fact is string => Boolean(fact));
 
-  // Other things at the same venue before the night ends
-  const alsoHere = tonightEvents.filter(
+  const startsAtMs = event.startsAt.toMillis();
+  // Nothing for later today, "Sat" this week, "Sat, Oct 17" further off
+  const day = timing.state === 'upcoming' ? formatDayShort(startsAtMs, nowMs) : null;
+
+  // Other things at the same venue on the same night
+  const alsoHere = upcomingEvents.filter(
     (other) =>
       other.id !== event.id &&
       other.venueId === event.venueId &&
+      isSameNight(other.startsAt.toMillis(), startsAtMs) &&
       getTimingFor(other, nowMs).state !== 'ended'
   );
 
@@ -133,7 +151,9 @@ export default function EventDetailScreen() {
       ? 'on now'
       : timing.state === 'starting_soon'
         ? 'leave now to catch the start'
-        : `starts ${formatClock(event.startsAt.toMillis())}`;
+        : day
+          ? `${day} at ${formatClock(startsAtMs)}`
+          : `starts ${formatClock(startsAtMs)}`;
 
   return (
     <View style={styles.container}>
@@ -243,7 +263,9 @@ export default function EventDetailScreen() {
 
           {alsoHere.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>{`Also here ${getTodayLabel(new Date(nowMs))}`}</Text>
+              <Text style={styles.sectionTitle}>
+                {`Also here ${day ? `on ${day}` : getTodayLabel(new Date(nowMs))}`}
+              </Text>
               <View style={styles.alsoList}>
                 {alsoHere.map((other) => {
                   const look = forActivity(other.activityIds[0] ?? '');
@@ -260,7 +282,9 @@ export default function EventDetailScreen() {
                       </View>
                       <View style={styles.busyText}>
                         <Text style={styles.alsoTitle}>{other.title}</Text>
-                        <Text style={styles.alsoMeta}>{formatTimingBadge(other, nowMs)}</Text>
+                        <Text style={styles.alsoMeta}>
+                          {formatTimingBadge(other, nowMs, { dayShown: true })}
+                        </Text>
                       </View>
                       <MaterialCommunityIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
                     </TouchableOpacity>
@@ -281,12 +305,28 @@ export default function EventDetailScreen() {
       </ScrollView>
 
       <SafeAreaView edges={['bottom']} style={styles.footer}>
-        <PrimaryButton
-          title="Take me there"
-          icon="navigation-variant-outline"
-          onPress={handleDirections}
-          disabled={event.status === 'cancelled'}
-        />
+        {saved && !isOver && (
+          <View style={styles.reminder}>
+            <ReminderNote
+              status={reminderStatus}
+              startsAtMs={event.startsAt.toMillis()}
+              nowMs={nowMs}
+              onTurnOn={turnOnReminders}
+            />
+          </View>
+        )}
+        <View style={styles.actions}>
+          {/* Something already saved can always be taken off the list */}
+          <SaveButton saved={saved} onPress={() => toggleSaved(event)} disabled={isOver && !saved} />
+          <View style={styles.mainAction}>
+            <PrimaryButton
+              title="Take me there"
+              icon="navigation-variant-outline"
+              onPress={handleDirections}
+              disabled={event.status === 'cancelled'}
+            />
+          </View>
+        </View>
         <Text style={styles.footerNote} numberOfLines={1}>
           {event.location.address} · {leaveHint}
         </Text>
@@ -537,6 +577,17 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+  },
+  reminder: {
+    marginBottom: 12,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  mainAction: {
+    flex: 1,
   },
   footerNote: {
     fontFamily: FONTS.regular,

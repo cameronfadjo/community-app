@@ -2,8 +2,8 @@ import { GeoPoint, Timestamp } from 'firebase/firestore';
 import { Activity, DEFAULT_ACTIVITIES, EventListing, EventTags } from '../types';
 
 // Sample data for development, shown only when Firestore has no events.
-// Times are relative to now so there is always something on, today and
-// later in the week.
+// Times are relative to now so there is always something on: today, later
+// in the week, and later in the month.
 
 const MINUTE = 60 * 1000;
 const DAY_MINUTES = 24 * 60;
@@ -256,6 +256,58 @@ export const buildSampleEvents = (nowMs: number = Date.now()): EventListing[] =>
         durationMinutes: 180,
         coverCents: 0,
         tags: tags({ firstTimersWelcome: true, stepFreeEntry: true }),
+        audience: ['Everyone welcome'],
+      },
+      nowMs
+    ),
+    build(
+      {
+        id: 'sample_event_open_mic',
+        title: 'Open mic night',
+        description: 'Poems, songs, and stories. Sign up at the door, or just listen.',
+        activityIds: ['open-mics', 'live-music'],
+        venue: 'frances',
+        startsInMinutes: 9 * DAY_MINUTES + 120,
+        durationMinutes: 150,
+        coverCents: 0,
+        tags: tags({ goodForSolo: true, firstTimersWelcome: true, minimumAge: 18 }),
+        audience: ['Everyone welcome'],
+      },
+      nowMs
+    ),
+    build(
+      {
+        id: 'sample_event_tea_dance',
+        title: 'Sunday tea dance',
+        description: 'Afternoon dancing with a disco and house set. Finishes early.',
+        activityIds: ['dancing'],
+        venue: 'stud',
+        startsInMinutes: 16 * DAY_MINUTES,
+        durationMinutes: 240,
+        coverCents: 800,
+        tags: tags({ goodForSolo: true, stepFreeEntry: true }),
+        audience: ['Everyone welcome'],
+        perkLabel: 'Free soft drink',
+      },
+      nowMs
+    ),
+    build(
+      {
+        id: 'sample_event_makers_market',
+        title: 'Queer makers market',
+        description: 'Stalls from local artists and makers, with coffee and cake.',
+        activityIds: ['markets-and-fairs', 'arts-and-crafts'],
+        venue: 'twinPeaks',
+        startsInMinutes: 24 * DAY_MINUTES - 180,
+        durationMinutes: 300,
+        coverCents: 0,
+        tags: tags({
+          goodForSolo: true,
+          firstTimersWelcome: true,
+          alcoholFree: true,
+          stepFreeEntry: true,
+          minimumAge: 18,
+        }),
         audience: ['Everyone welcome'],
       },
       nowMs

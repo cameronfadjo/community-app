@@ -10,20 +10,39 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AccountButton, ActivityTile, EventRow, PrimaryButton } from '../../src/components/events';
+import {
+  AccountButton,
+  ActivityTile,
+  DayHeading,
+  EventRow,
+  PeriodSwitch,
+  PrimaryButton,
+} from '../../src/components/events';
 import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { EVERYTHING_ID, useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { getCurrentLocation } from '../../src/utils/location';
-import { capitalize, formatDayPart, formatPeriod, getTimingFor } from '../../src/utils/events';
-import { Activity, countEventsByActivity } from '../../src/types';
+import {
+  capitalize,
+  formatDayPart,
+  formatPeriod,
+  getTimingFor,
+  groupByDay,
+} from '../../src/utils/events';
+import {
+  Activity,
+  DAYS_PER_MONTH_AHEAD,
+  chooseWhen,
+  countEventsByActivity,
+} from '../../src/types';
 import { COLORS, FONTS } from '../../src/constants/theme';
 
 const COLUMNS = 3;
 // Tiles shown before "All activities" is opened, leaving one slot for Everything
 const COLLAPSED_ACTIVITY_COUNT = 8;
 const STARTING_SOON_COUNT = 4;
-const LATER_THIS_WEEK_COUNT = 6;
+// How much of the week or month is shown before "See all"
+const COMING_UP_COUNT = 8;
 
 interface Tile {
   id: string;
@@ -43,9 +62,10 @@ export default function WhatsOnScreen() {
   const { forActivity, forEvent } = useActivityLookup();
   const {
     activities,
-    tonightEvents,
     homeEvents,
     homeScope,
+    chosenScope,
+    loadedDays,
     userLocation,
     loading,
     loaded,
@@ -53,6 +73,7 @@ export default function WhatsOnScreen() {
     usingSampleData,
     setUserLocation,
     loadTonight,
+    chooseScope,
   } = useEventStore();
 
   const [showAll, setShowAll] = useState(false);
@@ -97,24 +118,23 @@ export default function WhatsOnScreen() {
     ];
   }, [showAll, rankedActivities, counts, homeEvents.length]);
 
-  const startingSoon = useMemo(
-    () =>
-      tonightEvents
-        .filter((event) => getTimingFor(event, nowMs).state !== 'ended')
-        .slice(0, STARTING_SOON_COUNT),
-    [tonightEvents, nowMs]
+  const stillToCome = useMemo(
+    () => homeEvents.filter((event) => getTimingFor(event, nowMs).state !== 'ended'),
+    [homeEvents, nowMs]
   );
 
-  // Shown when today is thin, so there is always somewhere to go
-  const laterThisWeek = useMemo(() => {
-    if (homeScope !== 'week') {
-      return [];
-    }
-    const todayIds = new Set(tonightEvents.map((event) => event.id));
-    return homeEvents.filter((event) => !todayIds.has(event.id)).slice(0, LATER_THIS_WEEK_COUNT);
-  }, [homeScope, homeEvents, tonightEvents]);
+  // Today is a short list. The week and the month are laid out by day.
+  const shown = useMemo(
+    () => stillToCome.slice(0, homeScope === 'today' ? STARTING_SOON_COUNT : COMING_UP_COUNT),
+    [stillToCome, homeScope]
+  );
+  const days = useMemo(() => groupByDay(shown, nowMs), [shown, nowMs]);
 
-  const renderRows = (events: typeof homeEvents) => (
+  // The week was chosen for them, because today is thin
+  const choseForThem = chosenScope === null && homeScope === 'week';
+  const lookingFurther = homeScope === 'month' && loading && loadedDays < DAYS_PER_MONTH_AHEAD;
+
+  const renderRows = (events: typeof homeEvents, dayShown = false) => (
     <View style={styles.rows}>
       {events.map((event) => {
         const appearance = forEvent(event);
@@ -125,6 +145,7 @@ export default function WhatsOnScreen() {
             nowMs={nowMs}
             color={appearance.color}
             icon={appearance.icon}
+            dayShown={dayShown}
             onPress={() => router.push(`/event/${event.id}`)}
           />
         );
@@ -166,6 +187,8 @@ export default function WhatsOnScreen() {
           </View>
           <Text style={styles.heading}>What are you{'\n'}up for?</Text>
         </View>
+
+        <PeriodSwitch selected={homeScope} now={new Date(nowMs)} onChange={chooseScope} />
 
         {usingSampleData && (
           <View style={styles.notice}>
@@ -228,44 +251,61 @@ export default function WhatsOnScreen() {
           disabled={homeEvents.length === 0}
         />
 
-        {(homeScope === 'today' || startingSoon.length > 0) && (
-          <View>
-            <Text style={styles.sectionTitle}>
-              {homeScope === 'week'
-                ? capitalize(today)
-                : userLocation
-                  ? 'Starting soon near you'
-                  : 'Starting soon'}
-            </Text>
-            {startingSoon.length === 0 ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>{`Nothing on ${today} yet`}</Text>
-                <Text style={styles.emptyText}>Check back later, or look at the weekend.</Text>
-              </View>
-            ) : (
-              renderRows(startingSoon)
-            )}
-          </View>
-        )}
+        <View>
+          <Text style={styles.sectionTitle}>
+            {homeScope !== 'today'
+              ? `Coming up ${period}`
+              : userLocation
+                ? 'Starting soon near you'
+                : 'Starting soon'}
+          </Text>
+          {choseForThem && shown.length > 0 && (
+            <Text style={styles.sectionNote}>{`It's quiet ${today}, so here's the week.`}</Text>
+          )}
 
-        {homeScope === 'week' && (
-          <View>
-            <Text style={styles.sectionTitle}>
-              {startingSoon.length > 0 ? 'Later this week' : 'On this week'}
-            </Text>
-            {startingSoon.length === 0 && laterThisWeek.length > 0 && (
-              <Text style={styles.sectionNote}>{`It's quiet ${today}. Here's what's coming up.`}</Text>
-            )}
-            {laterThisWeek.length === 0 ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>Nothing else on this week yet</Text>
-                <Text style={styles.emptyText}>Venues post through the week, so check back.</Text>
-              </View>
-            ) : (
-              renderRows(laterThisWeek)
-            )}
-          </View>
-        )}
+          {shown.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>
+                {lookingFurther ? 'Looking further ahead...' : `Nothing on ${period} yet`}
+              </Text>
+              {!lookingFurther && (
+                <Text style={styles.emptyText}>
+                  {homeScope === 'month'
+                    ? 'Venues post through the week, so check back.'
+                    : 'Check back later, or look further ahead.'}
+                </Text>
+              )}
+            </View>
+          ) : homeScope === 'today' ? (
+            renderRows(shown)
+          ) : (
+            <View style={styles.days}>
+              {days.map((day) => (
+                <View key={day.dayKey}>
+                  <DayHeading label={day.label} />
+                  {renderRows(day.events, true)}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {lookingFurther && shown.length > 0 && (
+            <Text style={styles.further}>Looking further ahead...</Text>
+          )}
+
+          {stillToCome.length > shown.length && (
+            <TouchableOpacity
+              style={styles.seeAll}
+              onPress={() =>
+                router.push(`/activity/${EVERYTHING_ID}?when=${chooseWhen(null, homeScope)}`)
+              }
+              accessibilityRole="button"
+            >
+              <Text style={styles.showAllText}>{`See all ${stillToCome.length} ${period}`}</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.primaryDark} />
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -358,6 +398,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.primaryDark,
   },
+  seeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minHeight: 44,
+    marginTop: 8,
+  },
   sectionTitle: {
     fontFamily: FONTS.black,
     fontSize: 21,
@@ -370,6 +418,16 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: -6,
     marginBottom: 12,
+  },
+  further: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  days: {
+    gap: 12,
   },
   rows: {
     gap: 10,

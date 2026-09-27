@@ -21,13 +21,27 @@ attached, and it must not let a host work out who any one person is.
 
 | Stage | What hosts get | Status |
 |---|---|---|
-| 1 | Views, when people looked, asked for directions, and the perk funnel. An Insights page per event and per venue. Perk records deleted after 30 days. | Built |
+| 1 | Views, when people looked, saved, asked for directions, and the perk funnel. An Insights page per event and per venue. Perk records deleted after 30 days. | Built |
 | 2 | Where views came from, ticket and link taps, how far ahead people look, arrival hours, unused perks | To do |
 | 3 | Repeating events over time, and demand with nothing to meet it, by town | To do |
 | Later | New versus returning, benchmarks, a weekly summary by email | When there is enough use |
 
 "Asked for directions" is the sign that someone means to go. The app has no
 "I'm going" button, by design.
+
+### Saved (added September 27, 2026)
+
+People can save an event to come back to, and be reminded the day before.
+Hosts see how many times an event was saved, and nothing else.
+
+- The saved list and its reminders stay on the person's phone. The server
+  never learns what anyone saved, so there is no list of who plans to go.
+- Saving adds one to the event's count, with the same safeguards as a view.
+- The count does not go down when someone takes an event off their list.
+  Lowering it would mean remembering which save was whose.
+- It is called "Save", not "I'm going": a note to yourself, not a promise
+  to anyone.
+- Saves are shown as a total. There is no breakdown of when people saved.
 
 ## Stage 2 and 3 ideas
 

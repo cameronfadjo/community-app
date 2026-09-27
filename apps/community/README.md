@@ -25,9 +25,10 @@ the screens are not empty. A release build never shows them.
 | Screen | File |
 |---|---|
 | Welcome, asked once: confirm you are 18 or older | `app/welcome.tsx` |
-| What's on: activity tiles, today or this week | `app/(tabs)/whats-on.tsx` |
+| What's on: activity tiles for today, this week, or this month | `app/(tabs)/whats-on.tsx` |
 | Near you: events by distance | `app/(tabs)/map.tsx` |
 | Perks | `app/(tabs)/perks.tsx` |
+| Saved: events saved to come back to, and their reminders | `app/(tabs)/saved.tsx` |
 | One activity's events, with filters | `app/activity/[id].tsx` |
 | One event | `app/event/[id].tsx` |
 | Just pick for me | `app/pick.tsx` |
@@ -38,9 +39,10 @@ the screens are not empty. A release build never shows them.
 ## How it is put together
 
 - **Rules that can be tested** live in `packages/types` and are shared with
-  the dashboards: event times, repeats, perks, nudges, sign-up.
-- **`src/store`** holds what the screens share: events, perks, sign-in,
-  nudges, and the welcome confirmation.
+  the dashboards: event times, repeats, perks, nudges, saved events and
+  their reminders, sign-up.
+- **`src/store`** holds what the screens share: events, saved events,
+  perks, sign-in, nudges, and the welcome confirmation.
 - **`src/services`** talks to Firebase.
 - **`functions/`** holds the Cloud Functions. It has its own `package.json`
   and is installed with `npm`, not `pnpm`.
@@ -52,8 +54,13 @@ can.
 
 - Events are loaded once, for the next twelve days, and shared by every
   screen and by the nudges.
+- The rest of the month is loaded only when someone asks to see it, and
+  only the days not already in hand.
 - Opening another screen within five minutes reuses what is loaded. Pull
   down on What's on to load again.
+- Saved events are checked for changes against what is already loaded. The
+  app asks about one by itself only when it is further ahead than that, or
+  is no longer listed.
 - The list of activities is kept on the phone for a day.
 
 Two Cloud Functions remain, both because a phone can't be trusted with the
@@ -64,6 +71,9 @@ job: keeping perk totals, and deleting an account.
 - Browsing needs no account.
 - Location is read while the app is open and is never sent to the server.
 - Nudges are scheduled on the phone.
+- Saved events are kept on the phone and nowhere else, and so are their
+  reminders. Saving needs no account. An event leaves the list once it is
+  over. See `src/store/savedStore.ts`.
 - Nobody has a public profile.
 - Hosts see counts of what people did, never who. See `src/services/api/signals.ts`.
 - Perk records are deleted 30 days after the event. The database does this

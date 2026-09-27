@@ -6,12 +6,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FilterPill } from '../src/components/events';
 import { useEventStore } from '../src/store/eventStore';
 import { useNotificationStore } from '../src/store/notificationStore';
-import {
-  canScheduleNotifications,
-  requestNotificationPermission,
-} from '../src/services/notifications';
+import { useSavedEvents } from '../src/hooks/useSavedEvents';
+import { canScheduleNotifications } from '../src/services/notifications';
 import { formatClock } from '../src/utils/events';
+import { LATE_REMINDER_HOURS_BEFORE } from '../src/types';
 import { COLORS, FONTS } from '../src/constants/theme';
+
+const BLOCKED_NOTICE =
+  "Notifications are turned off for Community in your phone's settings. Turn them on there, then come back.";
 
 const formatWhen = (ms: number): string => {
   const day = new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
@@ -46,7 +48,8 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ title, detail, value, onChange, d
 export default function NotificationsScreen() {
   const router = useRouter();
   const { activities, loaded: eventsLoaded, loadTonight } = useEventStore();
-  const { prefs, plan, loaded, load, update, reschedule } = useNotificationStore();
+  const { prefs, plan, loaded, load, update, reschedule, askPermission } = useNotificationStore();
+  const { reminderStatus, turnOnReminders, turnOffReminders } = useSavedEvents();
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,14 +77,25 @@ export default function NotificationsScreen() {
       return;
     }
 
-    const permission = await requestNotificationPermission();
-    if (permission === 'denied') {
-      setNotice(
-        "Notifications are turned off for Community in your phone's settings. Turn them on there, then come back."
-      );
+    if ((await askPermission()) === 'denied') {
+      setNotice(BLOCKED_NOTICE);
       return;
     }
     await update({ enabled: true });
+  };
+
+  const handleReminders = async (wanted: boolean) => {
+    setNotice(null);
+
+    if (!wanted) {
+      await turnOffReminders();
+      return;
+    }
+
+    await turnOnReminders();
+    if (useNotificationStore.getState().permission === 'denied') {
+      setNotice(BLOCKED_NOTICE);
+    }
   };
 
   const toggleActivity = (activityId: string) => {
@@ -92,6 +106,9 @@ export default function NotificationsScreen() {
   };
 
   const off = !prefs.enabled;
+  // On in a web browser too, where the choice is kept for the phone app
+  const remindersOn = reminderStatus === 'on' || reminderStatus === 'unsupported';
+  const nothingToSend = off && !remindersOn;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -109,8 +126,9 @@ export default function NotificationsScreen() {
         </View>
 
         <Text style={styles.intro}>
-          A reminder when something you'd like is about to start. Worked out on your phone, so what
-          you follow and where you are stay with you.
+          A nudge when something you'd like is about to start, and a reminder before anything
+          you've saved. Worked out on your phone, so what you follow, what you save, and where you
+          are stay with you.
         </Text>
 
         {!canScheduleNotifications && (
@@ -155,13 +173,30 @@ export default function NotificationsScreen() {
               onChange={(value) => update({ weekendLineup: value })}
               disabled={off}
             />
-            <View style={styles.divider} />
+          </View>
+        </View>
+
+        <View>
+          <Text style={styles.sectionTitle}>What you've saved</Text>
+          <View style={styles.card}>
+            <ToggleRow
+              title="Remind me"
+              detail={`The day before, or ${LATE_REMINDER_HOURS_BEFORE} hours before if you save it later than that`}
+              value={remindersOn}
+              onChange={handleReminders}
+            />
+          </View>
+        </View>
+
+        <View>
+          <Text style={styles.sectionTitle}>On your lock screen</Text>
+          <View style={styles.card}>
             <ToggleRow
               title="Keep them discreet"
               detail="Leave out event, venue, and activity names"
               value={prefs.discreet}
               onChange={(value) => update({ discreet: value })}
-              disabled={off}
+              disabled={nothingToSend}
             />
           </View>
         </View>
@@ -187,7 +222,7 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
-        {!off && (
+        {(!off || plan.length > 0) && (
           <View>
             <Text style={styles.sectionTitle}>Coming up</Text>
             {plan.length === 0 ? (

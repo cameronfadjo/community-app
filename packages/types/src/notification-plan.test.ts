@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_NOTIFICATION_PREFS,
   MAX_PLANNED_NOTIFICATIONS,
   MAX_STARTING_SOON_PER_NIGHT,
   buildNotificationPlan,
@@ -7,6 +8,7 @@ import {
   type NotificationPrefs,
   type PlanEvent,
 } from './notification-plan';
+import type { SavedEvent } from './saved';
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -20,6 +22,7 @@ const prefs = (overrides: Partial<NotificationPrefs> = {}): NotificationPrefs =>
   weekendLineup: true,
   discreet: false,
   activityIds: [],
+  savedReminders: true,
   ...overrides,
 });
 
@@ -171,5 +174,65 @@ describe('buildNotificationPlan', () => {
     expect(planned.length).toBeLessThanOrEqual(MAX_PLANNED_NOTIFICATIONS);
     const times = planned.map((n) => n.fireAtMs);
     expect(times).toEqual([...times].sort((a, b) => a - b));
+  });
+});
+
+describe('buildNotificationPlan with saved events', () => {
+  const DAY = 24 * HOUR;
+  // Saturday, Sept 26 2026, 8 PM
+  const start = new Date(2026, 8, 26, 20, 0).getTime();
+
+  const aSaved = (overrides: Partial<SavedEvent> = {}): SavedEvent => ({
+    eventId: 's1',
+    title: 'Drag bingo',
+    venueName: 'Chez Est',
+    activityIds: ['drag-shows'],
+    startsAtMs: start,
+    endsAtMs: start + 3 * HOUR,
+    status: 'scheduled',
+    savedAtMs: now,
+    ...overrides,
+  });
+
+  const planWith = (saved: SavedEvent[], p = prefs(), events: PlanEvent[] = []) =>
+    buildNotificationPlan({ events, saved, prefs: p, activityLabels: labels, nowMs: now });
+
+  it('reminds about a saved event even when nudges are off', () => {
+    const planned = planWith([aSaved()], prefs({ enabled: false }), [event()]);
+    expect(planned.map((item) => item.kind)).toEqual(['saved_reminder']);
+    expect(planned[0]?.fireAtMs).toBe(start - DAY);
+  });
+
+  it('sends no reminders once they are switched off', () => {
+    expect(planWith([aSaved()], prefs({ enabled: false, savedReminders: false }))).toEqual([]);
+  });
+
+  it('sends reminders and nudges together, in the order they fire', () => {
+    const planned = planWith([aSaved()], prefs({ weekendLineup: false }), [event()]);
+    expect(planned.map((item) => item.kind)).toEqual(['saved_reminder', 'starting_soon']);
+    expect(planned[0]!.fireAtMs).toBeLessThan(planned[1]!.fireAtMs);
+  });
+
+  it('makes room for reminders first when there are too many to send', () => {
+    const lots = Array.from({ length: MAX_PLANNED_NOTIFICATIONS + 5 }, (_, index) =>
+      aSaved({ eventId: `s${index}`, startsAtMs: start + index * DAY })
+    );
+    const planned = planWith(lots, prefs(), [event()]);
+    expect(planned).toHaveLength(MAX_PLANNED_NOTIFICATIONS);
+    expect(planned.every((item) => item.kind === 'saved_reminder')).toBe(true);
+    // The ones left out are the furthest off, which get their turn later
+    expect(planned.map((item) => item.eventId)).toEqual(
+      lots.slice(0, MAX_PLANNED_NOTIFICATIONS).map((item) => item.eventId)
+    );
+  });
+
+  it('keeps reminders discreet when nudges are', () => {
+    const [reminder] = planWith([aSaved()], prefs({ discreet: true, enabled: false }));
+    expect(reminder?.title).toBe('Something you saved is tomorrow');
+  });
+
+  it('starts with reminders on and nudges off', () => {
+    expect(DEFAULT_NOTIFICATION_PREFS.savedReminders).toBe(true);
+    expect(DEFAULT_NOTIFICATION_PREFS.enabled).toBe(false);
   });
 });

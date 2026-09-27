@@ -14,6 +14,20 @@ const CHANNEL_ID = 'whats-on';
 
 export type PermissionResult = 'granted' | 'denied' | 'unsupported';
 
+/** What the phone allows: not asked yet, allowed, or refused */
+export type NotificationPermission = 'granted' | 'undetermined' | 'denied';
+
+// Android files notifications under a channel, which has to exist first
+const ensureChannel = async (): Promise<void> => {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+    name: "What's on",
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+};
+
 export const configureNotifications = (): void => {
   if (!canScheduleNotifications) {
     return;
@@ -35,12 +49,7 @@ export const requestNotificationPermission = async (): Promise<PermissionResult>
     return 'unsupported';
   }
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: "What's on",
-      importance: Notifications.AndroidImportance.DEFAULT,
-    });
-  }
+  await ensureChannel();
 
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) {
@@ -54,11 +63,16 @@ export const requestNotificationPermission = async (): Promise<PermissionResult>
   return asked.granted ? 'granted' : 'denied';
 };
 
-export const hasNotificationPermission = async (): Promise<boolean> => {
+/** What the phone currently allows, without asking the person anything */
+export const getNotificationPermission = async (): Promise<NotificationPermission> => {
   if (!canScheduleNotifications) {
-    return false;
+    return 'undetermined';
   }
-  return (await Notifications.getPermissionsAsync()).granted;
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) {
+    return 'granted';
+  }
+  return current.canAskAgain ? 'undetermined' : 'denied';
 };
 
 export const cancelScheduledNotifications = async (): Promise<void> => {
@@ -75,6 +89,9 @@ export const scheduleNotifications = async (plan: PlannedNotification[]): Promis
   }
 
   await Notifications.cancelAllScheduledNotificationsAsync();
+  // Older Android phones allow notifications without being asked, so the
+  // channel may not have been set up yet
+  await ensureChannel();
 
   for (const notification of plan) {
     await Notifications.scheduleNotificationAsync({

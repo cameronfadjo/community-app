@@ -6,11 +6,12 @@
  * counts once per event per day, remembered on the phone itself.
  */
 
-export type SignalKind = 'view' | 'directions' | 'perkView';
+export type SignalKind = 'view' | 'save' | 'directions' | 'perkView';
 
 /** The field each kind adds to */
-export const SIGNAL_FIELDS: Record<SignalKind, 'views' | 'directions' | 'perkViews'> = {
+export const SIGNAL_FIELDS: Record<SignalKind, 'views' | 'saves' | 'directions' | 'perkViews'> = {
   view: 'views',
+  save: 'saves',
   directions: 'directions',
   perkView: 'perkViews',
 };
@@ -30,6 +31,8 @@ export interface SignalDay {
   /** YYYY-MM-DD */
   day: string;
   views?: number;
+  /** Times the event was saved. Taking it off the list doesn't lower this. */
+  saves?: number;
   directions?: number;
   perkViews?: number;
   /** Views in each hour, in fields h00 to h23 */
@@ -88,6 +91,7 @@ const count = (value: unknown): number =>
 
 export interface SignalSummary {
   views: number;
+  saves: number;
   directions: number;
   perkViews: number;
   /** Oldest first. Only days with at least one view. */
@@ -99,6 +103,7 @@ export interface SignalSummary {
 export const summarizeSignals = (days: SignalDay[]): SignalSummary => {
   const summary: SignalSummary = {
     views: 0,
+    saves: 0,
     directions: 0,
     perkViews: 0,
     byDay: [],
@@ -109,6 +114,7 @@ export const summarizeSignals = (days: SignalDay[]): SignalSummary => {
   for (const item of days) {
     const views = count(item.views);
     summary.views += views;
+    summary.saves += count(item.saves);
     summary.directions += count(item.directions);
     summary.perkViews += count(item.perkViews);
     if (views > 0) {
@@ -132,6 +138,7 @@ export const canShowBreakdown = (views: number): boolean => views >= MIN_FOR_BRE
 
 export interface EventTotals {
   views: number;
+  saves: number;
   directions: number;
   perkViews?: number;
   perkUnlocked?: number;
@@ -148,6 +155,7 @@ export interface FunnelStep {
 export const buildFunnel = (totals: EventTotals): FunnelStep[] => {
   const steps: FunnelStep[] = [
     { step: 'Viewed the event', count: totals.views },
+    { step: 'Saved it', count: totals.saves },
     { step: 'Asked for directions', count: totals.directions },
   ];
   if (totals.hasPerk === false) {
@@ -165,6 +173,7 @@ export interface EventInsight {
   venueId: string;
   venueName: string;
   views: number;
+  saves: number;
   directions: number;
   perkViews: number;
   perkUnlocked: number;
@@ -187,6 +196,7 @@ export const rollUpByVenue = (events: EventInsight[]): VenueInsight[] => {
     }
     venue.events += 1;
     venue.views += event.views;
+    venue.saves += event.saves;
     venue.directions += event.directions;
     venue.perkViews += event.perkViews;
     venue.perkUnlocked += event.perkUnlocked;

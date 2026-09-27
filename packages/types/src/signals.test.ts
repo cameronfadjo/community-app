@@ -40,6 +40,7 @@ describe('getSignalFields', () => {
   it('adds the others to their total only', () => {
     expect(getSignalFields('directions', when)).toEqual(['directions']);
     expect(getSignalFields('perkView', when)).toEqual(['perkViews']);
+    expect(getSignalFields('save', when)).toEqual(['saves']);
   });
 });
 
@@ -78,9 +79,10 @@ describe('counting once per phone, per event, per day', () => {
 describe('summarizeSignals', () => {
   it('adds up the days', () => {
     const summary = summarizeSignals([
-      day({ views: 3, directions: 1, h20: 2, h21: 1 }),
-      day({ day: '2026-09-26', views: 4, perkViews: 2, h20: 4 }),
+      day({ views: 3, directions: 1, saves: 2, h20: 2, h21: 1 }),
+      day({ day: '2026-09-26', views: 4, perkViews: 2, saves: 1, h20: 4 }),
     ]);
+    expect(summary.saves).toBe(3);
     expect(summary.views).toBe(7);
     expect(summary.directions).toBe(1);
     expect(summary.perkViews).toBe(2);
@@ -95,7 +97,7 @@ describe('summarizeSignals', () => {
 
   it('is all zeros when nothing has been counted', () => {
     const summary = summarizeSignals([]);
-    expect(summary).toMatchObject({ views: 0, directions: 0, perkViews: 0, byDay: [] });
+    expect(summary).toMatchObject({ views: 0, saves: 0, directions: 0, perkViews: 0, byDay: [] });
     expect(summary.byHour.every((count) => count === 0)).toBe(true);
   });
 
@@ -119,9 +121,17 @@ describe('canShowBreakdown', () => {
 describe('buildFunnel', () => {
   it('lists the steps from seeing the event to using the perk', () => {
     expect(
-      buildFunnel({ views: 40, directions: 12, perkViews: 9, perkUnlocked: 6, perkRedeemed: 5 })
+      buildFunnel({
+        views: 40,
+        saves: 15,
+        directions: 12,
+        perkViews: 9,
+        perkUnlocked: 6,
+        perkRedeemed: 5,
+      })
     ).toEqual([
       { step: 'Viewed the event', count: 40 },
+      { step: 'Saved it', count: 15 },
       { step: 'Asked for directions', count: 12 },
       { step: 'Went for the perk', count: 9 },
       { step: 'Unlocked the perk at the door', count: 6 },
@@ -130,8 +140,9 @@ describe('buildFunnel', () => {
   });
 
   it('leaves out the perk steps for an event with no perk', () => {
-    expect(buildFunnel({ views: 40, directions: 12, hasPerk: false })).toEqual([
+    expect(buildFunnel({ views: 40, saves: 15, directions: 12, hasPerk: false })).toEqual([
       { step: 'Viewed the event', count: 40 },
+      { step: 'Saved it', count: 15 },
       { step: 'Asked for directions', count: 12 },
     ]);
   });
@@ -141,13 +152,13 @@ describe('rollUpByVenue', () => {
   it('adds up each venue, busiest first', () => {
     expect(
       rollUpByVenue([
-        { venueId: 'a', venueName: 'Chez Est', views: 3, directions: 1, perkViews: 0, perkUnlocked: 0, perkRedeemed: 0 },
-        { venueId: 'b', venueName: 'Troupe429', views: 9, directions: 2, perkViews: 1, perkUnlocked: 1, perkRedeemed: 1 },
-        { venueId: 'a', venueName: 'Chez Est', views: 4, directions: 0, perkViews: 2, perkUnlocked: 1, perkRedeemed: 0 },
+        { venueId: 'a', venueName: 'Chez Est', views: 3, saves: 1, directions: 1, perkViews: 0, perkUnlocked: 0, perkRedeemed: 0 },
+        { venueId: 'b', venueName: 'Troupe429', views: 9, saves: 4, directions: 2, perkViews: 1, perkUnlocked: 1, perkRedeemed: 1 },
+        { venueId: 'a', venueName: 'Chez Est', views: 4, saves: 2, directions: 0, perkViews: 2, perkUnlocked: 1, perkRedeemed: 0 },
       ])
     ).toEqual([
-      { venueId: 'b', venueName: 'Troupe429', events: 1, views: 9, directions: 2, perkViews: 1, perkUnlocked: 1, perkRedeemed: 1 },
-      { venueId: 'a', venueName: 'Chez Est', events: 2, views: 7, directions: 1, perkViews: 2, perkUnlocked: 1, perkRedeemed: 0 },
+      { venueId: 'b', venueName: 'Troupe429', events: 1, views: 9, saves: 4, directions: 2, perkViews: 1, perkUnlocked: 1, perkRedeemed: 1 },
+      { venueId: 'a', venueName: 'Chez Est', events: 2, views: 7, saves: 3, directions: 1, perkViews: 2, perkUnlocked: 1, perkRedeemed: 0 },
     ]);
   });
 });

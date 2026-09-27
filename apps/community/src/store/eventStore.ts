@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import {
   Activity,
+  DAYS_PER_MONTH_AHEAD,
   EventListing,
   HomeScope,
-  chooseHomeScope,
   getTonightWindow,
   getWhenWindow,
   isStillFresh,
+  resolveHomeScope,
 } from '../types';
 import { getActivities } from '../services/api/activities';
 import { Coordinates, EventWithDistance, getEvent, getEventsInWindow } from '../services/api/events';
@@ -16,6 +17,8 @@ import { buildSampleActivities, buildSampleEvents } from '../data/sampleEvents';
 
 // Events are loaded once and shared by every screen and by the nudges.
 // Far enough ahead to cover next Thursday's lineup and the weekend after it.
+// The rest of the month is loaded only when someone asks to see it, so
+// people who don't look that far ahead cost nothing extra.
 export const LOOK_AHEAD_DAYS = 12;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -29,13 +32,21 @@ interface LoadOptions {
 
 interface EventState {
   activities: Activity[];
-  /** Everything on in the next twelve days, soonest first. Used for nudges. */
+  /** Everything loaded so far, soonest first: twelve days, or thirty once asked for */
   upcomingEvents: EventWithDistance[];
+  /** How many days ahead have been loaded */
+  loadedDays: number;
   /** Everything on in the next seven days, soonest first */
   weekEvents: EventWithDistance[];
   /** The part of the week that is on today, until the night ends */
   tonightEvents: EventWithDistance[];
-  /** The week when today is thin, so the app is never empty for lack of a busy night */
+  /** What the person picked on the home screen. Null until they pick. */
+  chosenScope: HomeScope | null;
+  /**
+   * The stretch of time being shown. Until someone picks, it is today, or
+   * the week when today is thin, so the app is never empty for lack of a
+   * busy night.
+   */
   homeScope: HomeScope;
   /** What the home screen, the list, and the pick draw from */
   homeEvents: EventWithDistance[];
@@ -48,6 +59,10 @@ interface EventState {
 
   setUserLocation: (location: Coordinates | null) => void;
   loadTonight: (options?: LoadOptions) => Promise<void>;
+  /** Shows today, the week, or the month, loading further ahead if needed */
+  chooseScope: (scope: HomeScope) => Promise<void>;
+  /** Makes sure events are loaded this many days ahead */
+  lookAhead: (days: number) => Promise<void>;
   findEvent: (eventId: string) => Promise<EventWithDistance | null>;
   getActivity: (activityId: string) => Activity | undefined;
 }
@@ -67,29 +82,41 @@ const addDistance = (events: EventListing[], near: Coordinates | null): EventWit
       : event
   );
 
-const splitForHome = (upcomingEvents: EventWithDistance[]) => {
+const soonestFirst = (events: EventWithDistance[]): EventWithDistance[] =>
+  [...events].sort((a, b) => a.startsAt.toMillis() - b.startsAt.toMillis());
+
+const splitForHome = (upcomingEvents: EventWithDistance[], chosenScope: HomeScope | null) => {
   const now = new Date();
-  const weekEvents = eventsInWindow(upcomingEvents, getWhenWindow('week', now));
+  const monthEvents = eventsInWindow(upcomingEvents, getWhenWindow('month', now));
+  const weekEvents = eventsInWindow(monthEvents, getWhenWindow('week', now));
   const tonightEvents = eventsInWindow(weekEvents, getTonightWindow(now));
-  const homeScope = chooseHomeScope(tonightEvents.length);
+  const homeScope = resolveHomeScope(chosenScope, tonightEvents.length);
+
+  const shown = { today: tonightEvents, week: weekEvents, month: monthEvents };
   return {
     upcomingEvents,
     weekEvents,
     tonightEvents,
+    chosenScope,
     homeScope,
-    homeEvents: homeScope === 'today' ? tonightEvents : weekEvents,
+    homeEvents: shown[homeScope],
   };
 };
 
 // Shared by callers that ask while a load is already under way
 let loadInFlight: Promise<void> | null = null;
+let furtherInFlight: Promise<void> | null = null;
 let loadedAtMs: number | null = null;
+// How far ahead to load. Grows to a month once someone asks for it.
+let daysToLoad = LOOK_AHEAD_DAYS;
 
 export const useEventStore = create<EventState>((set, get) => ({
   activities: [],
   upcomingEvents: [],
+  loadedDays: 0,
   weekEvents: [],
   tonightEvents: [],
+  chosenScope: null,
   homeScope: 'today',
   homeEvents: [],
   userLocation: null,
@@ -101,7 +128,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   setUserLocation: (location) => {
     set({
       userLocation: location,
-      ...splitForHome(addDistance(get().upcomingEvents, location)),
+      ...splitForHome(addDistance(get().upcomingEvents, location), get().chosenScope),
     });
   },
 
@@ -111,13 +138,16 @@ export const useEventStore = create<EventState>((set, get) => ({
     }
     if (!force && isStillFresh(loadedAtMs, Date.now(), KEEP_FOR_MS)) {
       // The day may have turned since, so work out today and the week again
-      set(splitForHome(get().upcomingEvents));
+      set(splitForHome(get().upcomingEvents, get().chosenScope));
       return Promise.resolve();
     }
 
     const load = async () => {
       set({ loading: true, error: null });
       const { userLocation } = get();
+      // Fixed now, so being asked for more while this loads can't be
+      // mistaken for having loaded it
+      const days = daysToLoad;
 
       let activities: Activity[] = [];
       let events: EventWithDistance[] = [];
@@ -127,7 +157,7 @@ export const useEventStore = create<EventState>((set, get) => ({
         [activities, events] = await Promise.all([
           getActivities({ fresh: force }),
           getEventsInWindow(
-            { startMs: Date.now(), endMs: Date.now() + LOOK_AHEAD_DAYS * MS_PER_DAY },
+            { startMs: Date.now(), endMs: Date.now() + days * MS_PER_DAY },
             {},
             userLocation
           ),
@@ -154,7 +184,8 @@ export const useEventStore = create<EventState>((set, get) => ({
 
       set({
         activities,
-        ...splitForHome(events),
+        ...splitForHome(events, get().chosenScope),
+        loadedDays: error ? 0 : days,
         loading: false,
         loaded: true,
         error,
@@ -166,6 +197,69 @@ export const useEventStore = create<EventState>((set, get) => ({
       loadInFlight = null;
     });
     return loadInFlight;
+  },
+
+  chooseScope: async (scope) => {
+    set(splitForHome(get().upcomingEvents, scope));
+    if (scope === 'month') {
+      await get().lookAhead(DAYS_PER_MONTH_AHEAD);
+    }
+  },
+
+  lookAhead: async (days) => {
+    // Remembered, so pulling down to refresh loads this far as well
+    daysToLoad = Math.max(daysToLoad, days);
+
+    // Wait for anything under way, or start the first load
+    if (loadInFlight || !get().loaded) {
+      await get().loadTonight();
+    }
+    if (furtherInFlight) {
+      await furtherInFlight;
+    }
+
+    const { loadedDays, usingSampleData, userLocation } = get();
+    if (days <= loadedDays) {
+      return;
+    }
+
+    // Sample events are all in hand already
+    if (usingSampleData) {
+      set({ loadedDays: days });
+      return;
+    }
+
+    const loadFurther = async () => {
+      set({ loading: true, error: null });
+      try {
+        // Only the days not yet loaded
+        const further = await getEventsInWindow(
+          {
+            startMs: Date.now() + loadedDays * MS_PER_DAY,
+            endMs: Date.now() + days * MS_PER_DAY,
+          },
+          {},
+          userLocation
+        );
+        const known = new Set(get().upcomingEvents.map((event) => event.id));
+        const merged = soonestFirst([
+          ...get().upcomingEvents,
+          ...further.filter((event) => !known.has(event.id)),
+        ]);
+        set({ ...splitForHome(merged, get().chosenScope), loadedDays: days, loading: false });
+      } catch (e) {
+        console.error('[EventStore] Error loading further ahead:', e);
+        set({
+          loading: false,
+          error: "We couldn't load further ahead. Pull down to try again.",
+        });
+      }
+    };
+
+    furtherInFlight = loadFurther().finally(() => {
+      furtherInFlight = null;
+    });
+    await furtherInFlight;
   },
 
   findEvent: async (eventId) => {

@@ -187,10 +187,11 @@ This table is the source for both privacy forms. "Collected" means it leaves the
 | Perk unlock records: event, venue name, perk, time unlocked, time redeemed | Yes, only with an account | Yes | So each perk is used once. Venues see totals only. | This record shows the person was at a venue at a time. Treat it as sensitive. Deleted 30 days after the event. |
 | Precise location | No | No | Sort by distance, confirm arrival | Read on the phone and compared on the phone. Not sent to your servers. |
 | Notification choices and followed activities | No | No | Reminders | Saved on the phone only |
+| Saved events: the list of events a person has saved | No | No | Showing the Saved tab and setting reminders | Saved on the phone only, with or without an account. Events are dropped from the list once they are over. |
 | Photos, camera, microphone, contacts, calendar | No | No | Not used | |
 | Payment or purchase data | No | No | Not used | No purchases in the app |
 | Advertising ID, tracking across apps | No | No | Not used | No ad SDK |
-| Anonymous counts: event opened, directions tapped, perk gone for, with the day and hour | Yes | No | So venues can see what is working | Sent with no account ID, device ID, or location. Each phone counts once per event per day. Ask your lawyer whether the forms treat this as "Product interaction" data that is not linked to the person. |
+| Anonymous counts: event opened, event saved, directions tapped, perk gone for, with the day and hour | Yes | No | So venues can see what is working | Sent with no account ID, device ID, or location. Each phone counts once per event per day. Ask your lawyer whether the forms treat this as "Product interaction" data that is not linked to the person. |
 | Analytics | No | No | Not used | No analytics SDK is installed. If you add one, update both forms. |
 | Crash data | No today | No | Not used | Changes if you add crash reporting. See phase 8. |
 | IP address and device details | Handled by Google as your service provider | Not by you | Security and running the service | Firebase receives these when the app talks to it, as any server does. Read Firebase's own guidance for the forms: https://firebase.google.com/docs/ios/app-store-data-collection and https://firebase.google.com/docs/android/play-data-disclosure |
@@ -436,6 +437,13 @@ Run on at least one iPhone and one Android phone, using the production build fro
 - [ ] Follow an activity with an event starting soon. The reminder arrives with the app closed.
 - [ ] Tap the reminder. The event opens.
 - [ ] Turn nudges off. No more reminders arrive.
+- [ ] Save an event that is more than a day away. The Saved tab lists it and says when the reminder will come.
+- [ ] The first time, tap "Remind me". The system prompt appears only then, not when the app opens.
+- [ ] Set the phone's clock forward to a day before the event. The reminder arrives with the app closed.
+- [ ] Save an event that starts in a few hours. The reminder is set for two hours before.
+- [ ] Take a saved event off the list. Its reminder does not arrive.
+- [ ] Cancel a saved event from the partner dashboard, then open the app. The Saved tab shows it as cancelled and no reminder arrives.
+- [ ] With "Keep them discreet" on, the reminder leaves out the event and venue names.
 - [ ] Restart the Android phone. A scheduled reminder still arrives.
 
 **Deletion**

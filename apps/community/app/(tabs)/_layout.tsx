@@ -41,7 +41,7 @@ export default function TabsLayout() {
         name="perks"
         options={{ title: 'Perks', tabBarIcon: tabIcon('ticket-confirmation-outline') }}
       />
-
+      <Tabs.Screen name="saved" options={{ title: 'Saved', tabBarIcon: tabIcon('bookmark-outline') }} />
     </Tabs>
   );
 }

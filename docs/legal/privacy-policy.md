@@ -14,8 +14,9 @@ Address: [postal address]
 - You can browse events without an account. If you do, we do not collect your name or email.
 - An account is only needed to unlock perks. It needs a name, an email, and a password.
 - Your location is used on your phone while the app is open. We do not save it and it is not sent to our servers.
+- Events you save are kept in a list on your phone. The list is not sent to us, and nobody else can see it.
 - Reminders are worked out on your phone. What you follow stays on your phone.
-- We count how often events are looked at, so hosts know what works. A count is only a number. It says nothing about you.
+- We count how often events are looked at and saved, so hosts know what works. A count is only a number. It says nothing about you.
 - We do not sell your information. We do not show ads. We do not track you across other apps or websites.
 - You can delete your account in the app at any time.
 - The app is for adults aged 18 and over.
@@ -58,9 +59,10 @@ We keep this so each perk is used once per person. This record shows that you we
 
 ### Anonymous counts
 
-We count how often an event is looked at, so that venues and organizers can see what is working. We count three things:
+We count how often an event is looked at and saved, so that venues and organizers can see what is working. We count four things:
 
 - an event's page being opened
+- an event being saved
 - "Take me there" being tapped, which opens directions
 - someone going for an event's perk
 
@@ -73,6 +75,8 @@ We take these steps so that a count cannot point to a person:
 - Venues and organizers see when people looked only once an event has at least five views.
 - Venues and organizers see counts for their own events only.
 
+Saving an event adds one to that event's count. It does not send your saved list. If you take the event off your list, the count stays as it was, because we have no record of which save was yours.
+
 We do not use these counts to build a profile of you, and we could not: nothing in a count says who it came from.
 
 ### Information handled automatically
@@ -84,6 +88,7 @@ When the app talks to our servers, our service provider receives technical detai
 ## What we do not collect
 
 - Your location. See the next section.
+- The events you have saved. See "Saved events" below.
 - Your contacts, photos, camera, or microphone.
 - Payment details. The app is free and has no purchases.
 - An advertising ID.
@@ -102,9 +107,26 @@ You can say no. Browsing still works. You will not be able to unlock perks, sinc
 
 If you tap for directions, your phone's maps app opens. That app has its own privacy policy.
 
+## Saved events
+
+You can save an event to come back to. You do not need an account.
+
+- Your saved list is kept on your phone only. It is not sent to our servers, and it is not part of your account.
+- Nobody else can see it: not other people using the app, not venues or organizers, and not us.
+- An event is taken off the list once it is over, so the list does not become a record of where you have been.
+- To check whether a saved event has changed or been cancelled, the app asks our servers for that event's public details. This is the same request it makes when you open the event's page. It does not say that you saved the event.
+- Deleting the app deletes the list. Deleting your account does not, because the list is on your phone and not in your account. To clear it, take the events off the list.
+
 ## Reminders
 
-If you turn on reminders, the app schedules them on your phone, using events it has already loaded. The activities you follow and your reminder settings are saved on your phone only. They are not sent to us. You can turn reminders off in the app or in your phone's settings.
+The app can send two kinds of notification:
+
+- a reminder before an event you have saved: the day before, or two hours before if you save it later than that
+- a nudge when something you might like is about to start, if you turn nudges on
+
+Both are scheduled on your phone, using events the app has already loaded. They do not pass through our servers. The activities you follow, your saved list, and your notification settings are kept on your phone only. They are not sent to us.
+
+Your phone asks for your permission before the app can send any notification. You can turn reminders and nudges off in the app, or turn off all notifications in your phone's settings. You can also choose to leave event, venue, and activity names out of notifications, so that nothing about them shows on your lock screen.
 
 ## How we use information
 
@@ -158,7 +180,8 @@ You can:
 
 - browse without an account
 - turn location off
-- turn reminders off
+- save events, or take them off your list
+- turn reminders and nudges off
 - see your name, email, and perk history on the Account screen
 - delete your account
 - ask us for a copy of your information, or to correct it, at [contact email]

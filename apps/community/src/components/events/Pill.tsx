@@ -22,6 +22,7 @@ export const FilterPill: React.FC<FilterPillProps> = ({ label, selected, onPress
     activeOpacity={0.8}
     accessibilityRole="button"
     accessibilityState={{ selected }}
+    aria-selected={selected}
   >
     {selected && !solid && (
       <MaterialCommunityIcons name="check-bold" size={14} color={COLORS.info} />

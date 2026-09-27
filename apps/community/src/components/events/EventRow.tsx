@@ -1,9 +1,10 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ActivityColor, formatDistanceLabel } from '../../types';
+import { ActivityColor, formatDistanceLabel, isSaved } from '../../types';
 import { EventWithDistance } from '../../services/api/events';
 import { formatTimingLabel } from '../../utils/events';
+import { useSavedStore } from '../../store/savedStore';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../constants/theme';
 import { ActivityIcon } from './ActivityIcon';
 import { BusyIndicator } from './BusyIndicator';
@@ -14,12 +15,22 @@ interface EventRowProps {
   color: ActivityColor;
   icon: string;
   onPress: () => void;
+  /** True under a heading that already names the day */
+  dayShown?: boolean;
 }
 
 /** Compact event listing for the home screen */
-export const EventRow: React.FC<EventRowProps> = ({ event, nowMs, color, icon, onPress }) => {
+export const EventRow: React.FC<EventRowProps> = ({
+  event,
+  nowMs,
+  color,
+  icon,
+  onPress,
+  dayShown = false,
+}) => {
   const palette = ACTIVITY_PALETTE[color];
   const image = event.images[0];
+  const saved = useSavedStore((state) => isSaved(state.saved, event.id));
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.85} accessibilityRole="button">
@@ -32,9 +43,19 @@ export const EventRow: React.FC<EventRowProps> = ({ event, nowMs, color, icon, o
       )}
 
       <View style={styles.details}>
-        <Text style={styles.timing} numberOfLines={1}>
-          {formatTimingLabel(event, nowMs)}
-        </Text>
+        <View style={styles.timingRow}>
+          {saved && (
+            <MaterialCommunityIcons
+              name="bookmark"
+              size={14}
+              color={COLORS.primaryDark}
+              accessibilityLabel="Saved"
+            />
+          )}
+          <Text style={styles.timing} numberOfLines={1}>
+            {formatTimingLabel(event, nowMs, { dayShown })}
+          </Text>
+        </View>
         <Text style={styles.title} numberOfLines={1}>
           {event.title}
         </Text>
@@ -74,7 +95,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  timingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   timing: {
+    flexShrink: 1,
     fontFamily: FONTS.bold,
     fontSize: 13,
     color: COLORS.primaryDark,

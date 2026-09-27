@@ -9,11 +9,14 @@ import {
 } from '../types';
 import { EventWithDistance } from '../services/api/events';
 import {
+  NotificationPermission,
   cancelScheduledNotifications,
-  hasNotificationPermission,
+  getNotificationPermission,
+  requestNotificationPermission,
   scheduleNotifications,
 } from '../services/notifications';
 import { useEventStore } from './eventStore';
+import { useSavedStore } from './savedStore';
 
 // Kept on the phone only
 const STORAGE_KEY = 'community.notificationPrefs';
@@ -22,9 +25,15 @@ interface NotificationState {
   prefs: NotificationPrefs;
   /** What is currently scheduled, soonest first */
   plan: PlannedNotification[];
+  /** What the phone allows. It can change in the phone's settings at any time. */
+  permission: NotificationPermission;
   loaded: boolean;
 
   load: () => Promise<void>;
+  /** Looks at what the phone allows, without asking the person anything */
+  checkPermission: () => Promise<NotificationPermission>;
+  /** Asks the person to allow notifications. Only ever called after they ask for one. */
+  askPermission: () => Promise<NotificationPermission>;
   update: (changes: Partial<NotificationPrefs>) => Promise<void>;
   reschedule: () => Promise<void>;
 }
@@ -51,6 +60,7 @@ const loadUpcomingEvents = async (): Promise<EventWithDistance[]> => {
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   prefs: DEFAULT_NOTIFICATION_PREFS,
   plan: [],
+  permission: 'undetermined',
   loaded: false,
 
   load: async () => {
@@ -63,6 +73,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       console.error('[Notifications] Error reading preferences:', e);
     }
     set({ loaded: true });
+  },
+
+  checkPermission: async () => {
+    const permission = await getNotificationPermission();
+    set({ permission });
+    return permission;
+  },
+
+  askPermission: async () => {
+    const result = await requestNotificationPermission();
+    // A web browser can't send them, which is handled where reminders are described
+    const permission = result === 'unsupported' ? 'undetermined' : result;
+    set({ permission });
+    return permission;
   },
 
   update: async (changes) => {
@@ -78,32 +102,36 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     await get().reschedule();
   },
 
-  // Runs when the app opens and whenever preferences change, so cancelled
-  // or edited events drop out of what is scheduled
+  // Runs when the app opens, when something is saved, and whenever
+  // preferences change, so cancelled or edited events drop out of what is
+  // scheduled
   reschedule: async () => {
     const { prefs } = get();
+    const saved = prefs.savedReminders ? useSavedStore.getState().saved : [];
 
-    if (!prefs.enabled) {
+    if (!prefs.enabled && saved.length === 0) {
       set({ plan: [] });
       await cancelScheduledNotifications();
       return;
     }
 
     try {
-      const events = await loadUpcomingEvents();
+      // Nudges are about events in general. Reminders only need what was saved.
+      const events = prefs.enabled ? await loadUpcomingEvents() : [];
       const activityLabels = Object.fromEntries(
         useEventStore.getState().activities.map((activity) => [activity.id, activity.label])
       );
 
       const plan = buildNotificationPlan({
         events: events.map(toPlanEvent),
+        saved,
         prefs,
         activityLabels,
         nowMs: Date.now(),
       });
       set({ plan });
 
-      if (await hasNotificationPermission()) {
+      if ((await get().checkPermission()) === 'granted') {
         await scheduleNotifications(plan);
       }
     } catch (e) {
