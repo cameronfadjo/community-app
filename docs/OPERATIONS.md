@@ -32,51 +32,45 @@ pnpm --filter @community/partner-dashboard dev   # http://localhost:3001
 
 ---
 
-## Granting Partner Role
+## Granting roles
 
-### 1. Get Firebase Service Account Key
+Roles are granted with a script, using a service account key.
+
+### 1. Get the key
 
 1. Go to: https://console.firebase.google.com/project/community-86792/settings/serviceaccounts/adminsdk
-2. Click "Generate new private key" → save as `serviceAccountKey.json`
-3. **Do NOT commit this file to git**
+2. Click "Generate new private key" and save the file outside the project.
+3. **Never commit this file.** It gives full access to the project.
 
-### 2. Set Environment Variable & Run Script
+### 2. Run the script
+
+From the repository root:
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/serviceAccountKey.json"
-cd apps/partner-dashboard
-node scripts/set-partner-role.js set cameron.fadjo@gmail.com
-```
 
-### 3. Sign Out and Back In
-
-Custom claims require a token refresh. Sign out completely, clear cookies or use incognito, then sign back in.
-
-### Script Reference
-
-```bash
-node scripts/set-partner-role.js set email@example.com    # Grant partner
-node scripts/set-partner-role.js remove email@example.com  # Revoke partner
-node scripts/set-partner-role.js list                      # List all partners
-```
-
----
-
-## Granting Admin Role
-
-Uses the same service account key. Run from the repository root:
-
-```bash
 pnpm --filter @community/admin-dashboard set-admin list
 pnpm --filter @community/admin-dashboard set-admin set email@example.com
 pnpm --filter @community/admin-dashboard set-admin remove email@example.com
+
+pnpm --filter @community/admin-dashboard set-partner list
+pnpm --filter @community/admin-dashboard set-partner set email@example.com
+pnpm --filter @community/admin-dashboard set-partner remove email@example.com
 ```
 
-An account holds one role, so granting admin replaces partner. Use separate
-accounts to sign in to both dashboards. Sign out and back in afterwards.
+The account must already exist. Create it by signing up in the app.
 
-Roles are only granted with these scripts. The `setAdminClaim` and
-`setPartnerClaim` Cloud Functions were removed in September 2026.
+### 3. Sign out and back in
+
+A new role takes effect at the next sign-in.
+
+An account holds one role, so granting one replaces the other. Use separate
+accounts for the admin and partner dashboards.
+
+| Role | Can |
+|---|---|
+| Admin | Approve venues, block accounts, manage activities, take down any event |
+| Partner | Post, edit, and cancel their own events |
 
 ---
 
@@ -87,14 +81,16 @@ Roles are only granted with these scripts. The `setAdminClaim` and
 ```bash
 cd apps/community
 
-# Remove 'system' venue bypass in firestore.rules (after seeding)
-
 # Deploy (order matters: rules first, then functions)
 firebase deploy --only firestore:rules
 firebase deploy --only firestore:indexes
-firebase deploy --only storage
+firebase deploy --only storage    # only once Storage is set up in the project
 firebase deploy --only functions   # builds first; runs on Node.js 22
 ```
+
+Deploying functions or indexes after this clean-up asks whether to delete
+the ones that are no longer in the code (the review functions and old
+indexes). Answer yes.
 
 Then seed the starting activities from the repository root:
 
@@ -123,7 +119,7 @@ For each dashboard (`admin-dashboard`, `partner-dashboard`):
 ### 3. Mobile App (EAS Build)
 
 ```bash
-cd Community
+cd apps/community
 npm install -g eas-cli
 eas login
 eas build:configure
@@ -150,7 +146,6 @@ firebase functions:log
 ### Pre-Launch Checklist
 
 - [ ] Firestore security rules deployed
-- [ ] `system` venue bypass removed
 - [ ] SSL certificates active
 - [ ] Admin account created and tested
 - [ ] Partner account created and tested
@@ -174,12 +169,11 @@ firebase functions:log
 | CORS errors in production | Domain not in allowedOrigins | Update Cloud Functions with production domains, redeploy |
 | "Permission denied" on Firestore | Rules not deployed or wrong role | Deploy rules, verify user custom claims in Firebase Console |
 | "Port already in use" | Leftover process | `kill -9 $(lsof -ti:3000)` |
-| "Module not found" | Stale deps | `rm -rf node_modules && npm install` |
+| "Module not found" | Stale deps, or shared packages not built | `pnpm install && pnpm turbo build --filter='./packages/*'` |
 | "Firebase not initialized" | Missing/wrong .env.local | Check file exists with `NEXT_PUBLIC_` prefixed vars, restart dev server |
-| "Access denied" on Partner Dashboard | No partner claim or stale token | Run set-partner-role script, sign out and back in, clear cookies |
+| "Access denied" on a dashboard | The account lacks the role, or signed in before it was granted | Grant the role (see Granting roles), then sign out and back in |
 | Community App won't start | Expo cache | `npx expo start --clear` |
 
 ---
 
-*Last consolidated: March 30, 2026*
-*Sources: DEPLOYMENT_GUIDE.md, STARTUP_CHECKLIST.md, SETUP_PARTNER_ROLE.md*
+*Last updated: September 27, 2026*

@@ -38,7 +38,6 @@ export const useAuth = () => {
   const isAuthenticated = !!firebaseUser;
   const isEmailVerified = firebaseUser?.emailVerified || false;
   const isRejected = userProfile?.moderationStatus === 'rejected';
-  const isPremium = userProfile?.subscriptionTier === 'premium';
 
   return {
     // State
@@ -52,7 +51,6 @@ export const useAuth = () => {
     isAuthenticated,
     isEmailVerified,
     isRejected,
-    isPremium,
 
     // Actions
     signIn,

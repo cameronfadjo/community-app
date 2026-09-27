@@ -6,44 +6,49 @@ import { db } from '@/lib/firebase/config';
 import { Venue, ModerationStatus } from '@/types';
 import { format } from 'date-fns';
 
+async function fetchVenues(filter: ModerationStatus | 'all'): Promise<Venue[]> {
+  const ref = collection(db, 'venues');
+  const q =
+    filter === 'all'
+      ? query(ref, orderBy('createdAt', 'desc'))
+      : query(ref, where('moderationStatus', '==', filter), orderBy('createdAt', 'desc'));
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((item) => ({ ...item.data(), id: item.id })) as Venue[];
+}
+
 export default function VenuesPage() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ModerationStatus | 'all'>('pending');
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
 
+  // Bumped to load the list again after a change
+  const [version, setVersion] = useState(0);
+
   useEffect(() => {
-    loadVenues();
-  }, [filter]);
+    let cancelled = false;
+    fetchVenues(filter)
+      .then((loaded) => {
+        if (!cancelled) setVenues(loaded);
+      })
+      .catch((error) => console.error('Error loading venues:', error))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filter, version]);
 
-  const loadVenues = async () => {
+  const loadVenues = () => {
     setLoading(true);
-    try {
-      const venuesRef = collection(db, 'venues');
-      let q;
+    setVersion((current) => current + 1);
+  };
 
-      if (filter === 'all') {
-        q = query(venuesRef, orderBy('createdAt', 'desc'));
-      } else {
-        q = query(
-          venuesRef,
-          where('moderationStatus', '==', filter),
-          orderBy('createdAt', 'desc')
-        );
-      }
-
-      const snapshot = await getDocs(q);
-      const venuesData = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id,
-      })) as Venue[];
-
-      setVenues(venuesData);
-    } catch (error) {
-      console.error('Error loading venues:', error);
-    } finally {
-      setLoading(false);
-    }
+  const changeFilter = (next: ModerationStatus | 'all') => {
+    setLoading(true);
+    setFilter(next);
   };
 
   const handleModerate = async (venueId: string, status: ModerationStatus) => {
@@ -127,7 +132,7 @@ export default function VenuesPage() {
             {['all', 'pending', 'approved', 'rejected'].map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status as ModerationStatus | 'all')}
+                onClick={() => changeFilter(status as ModerationStatus | 'all')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   filter === status
                     ? 'bg-purple-600 text-white'
@@ -188,7 +193,6 @@ export default function VenuesPage() {
                   </div>
                   <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
                     <span>Submitted: {venue.createdAt && format(venue.createdAt.toDate(), 'MMM d, yyyy')}</span>
-                    <span>⭐ {venue.rating.toFixed(1)} ({venue.reviewCount} reviews)</span>
                   </div>
                 </div>
               ))}
@@ -269,12 +273,6 @@ export default function VenuesPage() {
                     )}
                   </div>
                 )}
-
-                {/* Rating */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Rating</h3>
-                  <p className="text-gray-600">⭐ {selectedVenue.rating.toFixed(1)} ({selectedVenue.reviewCount} reviews)</p>
-                </div>
 
                 {/* Actions */}
                 <div className="pt-4 border-t border-gray-200 space-y-3">

@@ -11,7 +11,7 @@ export const requestLocationPermission = async (): Promise<boolean> => {
     if (status !== 'granted') {
       Alert.alert(
         'Location Permission Required',
-        'Community needs access to your location to show nearby LGBTQ+ venues and experiences.',
+        "Community uses your location to show what's on near you and to unlock perks when you arrive.",
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -104,39 +104,6 @@ export const getCurrentLocation = async (): Promise<{
         'Unable to get your current location. Please make sure location services are enabled.'
       );
     }
-    return null;
-  }
-};
-
-/**
- * Watch the user's location for updates
- */
-export const watchLocation = async (
-  callback: (location: { latitude: number; longitude: number }) => void
-): Promise<{ remove: () => void } | null> => {
-  try {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) {
-      return null;
-    }
-
-    const subscription = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000, // Update every 5 seconds
-        distanceInterval: 50, // Update every 50 meters
-      },
-      (location) => {
-        callback({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-      }
-    );
-
-    return subscription;
-  } catch (error) {
-    console.error('Error watching location:', error);
     return null;
   }
 };

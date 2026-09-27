@@ -16,10 +16,8 @@
     "clean": "rm -rf .expo dist node_modules/.cache",
     "firebase:deploy": "firebase deploy",
     "firebase:rules": "firebase deploy --only firestore:rules",
-    "firebase:rules:all": "firebase deploy --only firestore:rules,storage:rules",
-    "firebase:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
-    "firebase:hosting": "firebase deploy --only hosting",
-    "seed:venues": "npx ts-node scripts/seedVenues.ts"
+    "firebase:functions": "firebase deploy --only functions",
+    "firebase:hosting": "firebase deploy --only hosting"
   },
   "dependencies": {
     "@community/firebase": "workspace:*",
@@ -30,7 +28,6 @@
     "@react-navigation/bottom-tabs": "^7.10.0",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.10.0",
-    "dotenv": "^17.2.3",
     "expo": "~54.0.31",
     "expo-font": "~14.0.12",
     "expo-location": "^19.0.8",
@@ -49,7 +46,6 @@
   "devDependencies": {
     "@types/node": "^25.0.9",
     "@types/react": "~19.1.0",
-    "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   }
 }

@@ -12,11 +12,6 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isApproved(userId) {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(userId)).data.moderationStatus == 'approved';
-    }
-
     // True only for an account an admin has blocked
     function isRejected(userId) {
       let profile = /databases/$(database)/documents/users/$(userId);
@@ -29,10 +24,6 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && request.auth.token.role == 'admin';
-    }
-
-    function isPartnerOrAdmin() {
-      return isPartner() || isAdmin();
     }
 
     // Users collection
@@ -56,23 +47,13 @@ service cloud.firestore {
 
     // Venues collection
     match /venues/{venueId} {
-      // Allow reading individual approved venues OR listing approved venues via queries
-      // Partners can read all venues for moderation
-      allow get: if resource.data.moderationStatus == 'approved' || isPartnerOrAdmin();
-      allow list: if true; // The query itself filters by moderationStatus, or partners can see all
+      // Anyone can read an approved venue, one at a time or as a list.
+      // A list must ask for approved venues only. Admins read all of them.
+      allow read: if resource.data.moderationStatus == 'approved' || isAdmin();
 
-      // Seeding uses the Admin SDK, which skips these rules
-      allow create: if isApproved(request.auth.uid) &&
-                       request.resource.data.submittedBy == request.auth.uid &&
-                       request.resource.data.moderationStatus == 'pending';
-
-      // Venue submitters can update their own venues (but not moderation status or ratings)
-      // Partners can update any venue (including moderation status and featured flag)
-      allow update: if (isOwner(resource.data.submittedBy) &&
-                        request.resource.data.moderationStatus == resource.data.moderationStatus &&
-                        request.resource.data.rating == resource.data.rating &&
-                        request.resource.data.reviewCount == resource.data.reviewCount) ||
-                       isPartnerOrAdmin();
+      // Admins add and manage venues. Seeding uses the Admin SDK, which
+      // skips these rules.
+      allow write: if isAdmin();
     }
 
     // Activities collection (dancing, drag shows, book clubs, ...)
@@ -158,28 +139,6 @@ service cloud.firestore {
     match /eventStats/{eventId} {
       allow read: if isOwner(resource.data.organizerId) || isAdmin();
       allow write: if false;
-    }
-
-    // Reviews collection
-    match /reviews/{reviewId} {
-      // Anyone can read reviews
-      allow read: if true;
-
-      // Authenticated, approved users can create reviews
-      allow create: if isApproved(request.auth.uid) &&
-                       request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own reviews
-      allow update: if isOwner(resource.data.userId);
-
-      // Users can delete their own reviews, or partners can delete any review
-      allow delete: if isOwner(resource.data.userId) || isPartnerOrAdmin();
-    }
-
-    // Admin collection (moderation)
-    match /admin/{document=**} {
-      // Only admin users can access (implement custom claims in Cloud Functions)
-      allow read, write: if false; // Managed through Cloud Functions only
     }
   }
 }

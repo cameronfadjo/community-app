@@ -6,43 +6,48 @@ import { db } from '@/lib/firebase/config';
 import { User, ModerationStatus } from '@/types';
 import { format } from 'date-fns';
 
+async function fetchUsers(filter: ModerationStatus | 'all'): Promise<User[]> {
+  const ref = collection(db, 'users');
+  const q =
+    filter === 'all'
+      ? query(ref, orderBy('createdAt', 'desc'))
+      : query(ref, where('moderationStatus', '==', filter), orderBy('createdAt', 'desc'));
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((item) => ({ ...item.data(), id: item.id })) as unknown as User[];
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<ModerationStatus | 'all'>('pending');
+  const [filter, setFilter] = useState<ModerationStatus | 'all'>('all');
+
+  // Bumped to load the list again after a change
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    loadUsers();
-  }, [filter]);
+    let cancelled = false;
+    fetchUsers(filter)
+      .then((loaded) => {
+        if (!cancelled) setUsers(loaded);
+      })
+      .catch((error) => console.error('Error loading users:', error))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filter, version]);
 
-  const loadUsers = async () => {
+  const loadUsers = () => {
     setLoading(true);
-    try {
-      const usersRef = collection(db, 'users');
-      let q;
+    setVersion((current) => current + 1);
+  };
 
-      if (filter === 'all') {
-        q = query(usersRef, orderBy('createdAt', 'desc'));
-      } else {
-        q = query(
-          usersRef,
-          where('moderationStatus', '==', filter),
-          orderBy('createdAt', 'desc')
-        );
-      }
-
-      const snapshot = await getDocs(q);
-      const usersData = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id,
-      })) as unknown as User[];
-
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Error loading users:', error);
-    } finally {
-      setLoading(false);
-    }
+  const changeFilter = (next: ModerationStatus | 'all') => {
+    setLoading(true);
+    setFilter(next);
   };
 
   const handleModerate = async (userId: string, status: ModerationStatus) => {
@@ -90,7 +95,7 @@ export default function UsersPage() {
             {['all', 'pending', 'approved', 'rejected'].map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status as ModerationStatus | 'all')}
+                onClick={() => changeFilter(status as ModerationStatus | 'all')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   filter === status
                     ? 'bg-purple-600 text-white'
@@ -146,7 +151,6 @@ export default function UsersPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{user.displayName}</div>
-                        {user.bio && <div className="text-sm text-gray-500 truncate max-w-xs">{user.bio}</div>}
                       </div>
                     </div>
                   </td>

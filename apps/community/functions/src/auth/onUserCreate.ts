@@ -6,7 +6,7 @@ import * as admin from 'firebase-admin';
  * Accounts start approved; there is no approval step
  */
 export const onUserCreate = functions.auth.user().onCreate(async (user) => {
-  const { uid, email, displayName, photoURL } = user;
+  const { uid, email, displayName } = user;
 
   try {
     // Create user document in Firestore
@@ -14,12 +14,7 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
       uid,
       email: email || '',
       displayName: displayName || 'Anonymous',
-      photoURL: photoURL || null,
-      bio: '',
-      verified: false,
       moderationStatus: 'approved',
-      subscriptionTier: 'free',
-      favorites: [],
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });

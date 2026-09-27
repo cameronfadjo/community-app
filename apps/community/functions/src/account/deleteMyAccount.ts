@@ -3,7 +3,8 @@ import * as admin from 'firebase-admin';
 import { isStorageNotSetUp } from './storageErrors';
 
 // Collections holding records tied to one person by a `userId` field.
-// Reviews and check-ins are from earlier versions of the app.
+// Reviews and check-ins were removed from the app, but records from earlier
+// versions may remain, so they are still cleared here.
 const PERSONAL_COLLECTIONS = ['perkRedemptions', 'reviews', 'checkIns'];
 
 // Firestore allows at most 500 writes in one batch

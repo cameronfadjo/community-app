@@ -1,40 +1,11 @@
 rules_version = '2';
 
+// Nothing in the app uploads or reads files yet, so everything is closed.
+// Open a path here when a feature needs it, such as photos for events.
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isValidImageType() {
-      return request.resource.contentType.matches('image/.*');
-    }
-
-    function isValidImageSize() {
-      // Max 5MB
-      return request.resource.size < 5 * 1024 * 1024;
-    }
-
-    // User profile photos
-    match /users/{userId}/profile/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(userId) &&
-                      isValidImageType() &&
-                      isValidImageSize();
-    }
-
-    // Venue images
-    match /venues/{venueId}/{fileName} {
-      allow read: if true;
-      allow write: if isAuthenticated() &&
-                      isValidImageType() &&
-                      isValidImageSize();
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

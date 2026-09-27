@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "echo 'no tests yet' && exit 0",
     "type-check": "tsc --noEmit",
     "seed:activities": "tsx scripts/seed-activities.ts",
-    "set-admin": "tsx scripts/set-admin-role.ts",
-    "clean": "rm -rf .next node_modules/.cache"
+    "set-admin": "tsx scripts/set-role.ts admin",
+    "clean": "rm -rf .next node_modules/.cache",
+    "set-partner": "tsx scripts/set-role.ts partner"
   },
   "dependencies": {
     "@community/firebase": "workspace:*",

@@ -39,27 +39,9 @@ export interface Venue {
   contact: VenueContact;
   /** Paid partnership flag — featured venues get premium placement. */
   featured: boolean;
-  /** Average rating, 0–5 */
-  rating: number;
-  reviewCount: number;
   moderationStatus: ModerationStatus;
-  /** User ID of the submitter */
+  /** ID of the account that added it */
   submittedBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  /** Distance from user — added client-side, not stored. */
-  distance?: number;
-}
-
-export interface VenueFilters {
-  categories?: VenueCategory[];
-  priceRanges?: PriceRange[];
-  radiusKm?: number;
-  minRating?: number;
-  featuredOnly?: boolean;
-}
-
-export interface VenueSortOptions {
-  sortBy: 'distance' | 'rating' | 'price' | 'newest';
-  order: 'asc' | 'desc';
 }

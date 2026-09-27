@@ -39,7 +39,7 @@ export default function DashboardError({
         </h3>
 
         <p className="text-gray-600 mb-6">
-          We couldn't load this page. Please try again.
+          We couldn&apos;t load this page. Please try again.
         </p>
 
         <button
