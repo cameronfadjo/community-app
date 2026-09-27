@@ -79,19 +79,12 @@ To access the **admin dashboard**, you need custom claims. This requires Firebas
 
 4. Use Firebase Admin SDK to set custom claims:
 
-   **Option 4a**: Upgrade to Blaze Plan (required for Cloud Functions)
-   - Visit: https://console.firebase.google.com/project/community-86792/usage/details
-   - Upgrade to Blaze (pay-as-you-go) plan
-   - Deploy the `setAdminClaim` Cloud Function:
+   - Download a service account key from the [Firebase Console](https://console.firebase.google.com/project/community-86792/settings/serviceaccounts/adminsdk)
+   - From the repository root, with `GOOGLE_APPLICATION_CREDENTIALS` set to the key's path:
      ```bash
-     cd ../Community
-     firebase deploy --only functions:setAdminClaim
+     pnpm --filter @community/admin-dashboard set-admin set email@example.com
      ```
-
-   **Option 4b**: Use Firebase Console with Service Account (Advanced)
-   - Download service account key from [Firebase Console](https://console.firebase.google.com/project/community-86792/settings/serviceaccounts/adminsdk)
-   - Create a script using `firebase-admin` to set custom claims
-   - See `ADMIN_ARCHITECTURE.md` for details
+   - See `docs/OPERATIONS.md` for details
 
 ## Admin Dashboard Pages
 

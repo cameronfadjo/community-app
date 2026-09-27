@@ -8,7 +8,7 @@ import {
   TextInputProps,
   ViewStyle,
 } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS } from '../constants/theme';
+import { COLORS, SPACING, FONT_SIZES, FONTS } from '../constants/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -51,8 +51,9 @@ export const Input: React.FC<InputProps> = ({
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
         <TextInput
-          style={[styles.input, leftIcon && styles.inputWithLeftIcon]}
-          placeholderTextColor={COLORS.textTertiary}
+          style={[styles.input, leftIcon ? styles.inputWithLeftIcon : undefined]}
+          placeholderTextColor={COLORS.textSecondary}
+          accessibilityLabel={label}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -63,6 +64,8 @@ export const Input: React.FC<InputProps> = ({
           <TouchableOpacity
             onPress={togglePasswordVisibility}
             style={styles.passwordToggle}
+            accessibilityRole="button"
+            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
           >
             <Text style={styles.passwordToggleText}>
               {isPasswordVisible ? 'Hide' : 'Show'}
@@ -86,23 +89,23 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
+    fontFamily: FONTS.medium,
     fontSize: FONT_SIZES.sm,
-    fontWeight: FONT_WEIGHTS.medium,
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    marginBottom: 6,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 56,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: 18,
     backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.md,
   },
   inputContainerFocused: {
     borderColor: COLORS.primary,
-    borderWidth: 2,
   },
   inputContainerError: {
     borderColor: COLORS.error,
@@ -110,6 +113,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: SPACING.md,
+    fontFamily: FONTS.regular,
     fontSize: FONT_SIZES.md,
     color: COLORS.text,
   },
@@ -123,21 +127,25 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.sm,
   },
   passwordToggle: {
+    minHeight: 44,
+    justifyContent: 'center',
     paddingLeft: SPACING.sm,
   },
   passwordToggleText: {
+    fontFamily: FONTS.bold,
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHTS.medium,
+    color: COLORS.primaryDark,
   },
   errorText: {
+    fontFamily: FONTS.medium,
     fontSize: FONT_SIZES.sm,
     color: COLORS.error,
-    marginTop: SPACING.xs,
+    marginTop: 6,
   },
   helperText: {
+    fontFamily: FONTS.regular,
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
+    marginTop: 6,
   },
 });

@@ -7,40 +7,25 @@ Deployment, startup, and role management for the Community App ecosystem.
 ## Quick Start (Local Development)
 
 ### Prerequisites
-- Node.js 18+ (`node --version`)
-- npm (`npm --version`)
-- Expo CLI (`npx expo --version`)
+- Node.js 20+ (`node --version`)
+- pnpm 9+ (`npm install -g pnpm`)
 - Firebase project: `community-86792` (Blaze plan)
 
-### Start All Apps
+### Start the Apps
 
-**Terminal 1 — Community App:**
-```bash
-cd Community
-npm install
-npm start
-# Press 'w' for web (localhost:8081), 'i' for iOS, 'a' for Android
-```
+From the repository root:
 
-**Terminal 2 — Admin Dashboard:**
 ```bash
-cd admin-dashboard
-npm install
-npm run dev
-# http://localhost:3000
-```
+pnpm install
 
-**Terminal 3 — Partner Dashboard:**
-```bash
-cd partner-dashboard
-npm install
-npm run dev
-# http://localhost:3001
+pnpm --filter @community/mobile dev              # Expo; press 'w' for web at localhost:8081
+pnpm --filter @community/admin-dashboard dev     # http://localhost:3000
+pnpm --filter @community/partner-dashboard dev   # http://localhost:3001
 ```
 
 ### Verify Setup
 
-- [ ] Community App: QR code showing, accessible at localhost:8081
+- [ ] Community App: opens to Tonight at localhost:8081 without signing in
 - [ ] Admin Dashboard: Login page at localhost:3000, no console errors
 - [ ] Partner Dashboard: Login page at localhost:3001, no console errors
 - [ ] Firebase connected (login attempt doesn't show "Firebase not initialized")
@@ -59,7 +44,7 @@ npm run dev
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/serviceAccountKey.json"
-cd partner-dashboard
+cd apps/partner-dashboard
 node scripts/set-partner-role.js set cameron.fadjo@gmail.com
 ```
 
@@ -77,27 +62,44 @@ node scripts/set-partner-role.js list                      # List all partners
 
 ---
 
+## Granting Admin Role
+
+Uses the same service account key. Run from the repository root:
+
+```bash
+pnpm --filter @community/admin-dashboard set-admin list
+pnpm --filter @community/admin-dashboard set-admin set email@example.com
+pnpm --filter @community/admin-dashboard set-admin remove email@example.com
+```
+
+An account holds one role, so granting admin replaces partner. Use separate
+accounts to sign in to both dashboards. Sign out and back in afterwards.
+
+Roles are only granted with these scripts. The `setAdminClaim` and
+`setPartnerClaim` Cloud Functions were removed in September 2026.
+
+---
+
 ## Production Deployment
 
 ### 1. Firebase Backend
 
 ```bash
-cd Community
-
-# Set secrets (save these securely)
-firebase functions:config:set admin.bootstrap_secret="$(openssl rand -base64 32)"
-firebase functions:config:set partner.bootstrap_secret="$(openssl rand -base64 32)"
-
-# Update CORS origins in setAdminClaim.ts and setPartnerClaim.ts
-# Replace localhost with production domains
+cd apps/community
 
 # Remove 'system' venue bypass in firestore.rules (after seeding)
 
 # Deploy (order matters: rules first, then functions)
 firebase deploy --only firestore:rules
-firebase deploy --only functions
 firebase deploy --only firestore:indexes
 firebase deploy --only storage
+firebase deploy --only functions   # builds first; runs on Node.js 22
+```
+
+Then seed the starting activities from the repository root:
+
+```bash
+pnpm --filter @community/admin-dashboard seed:activities
 ```
 
 ### 2. Dashboards (Vercel — Recommended)
@@ -138,21 +140,15 @@ eas submit --platform android
 ### 4. Post-Deployment
 
 ```bash
-# Grant initial admin access
-curl -X POST https://REGION-PROJECT.cloudfunctions.net/setAdminClaim \
-  -H "Content-Type: application/json" \
-  -H "Origin: https://admin.yourcommunityapp.com" \
-  -d '{"email": "admin@company.com", "secret": "YOUR_SECRET"}'
+# Grant initial admin access (see Granting Admin Role)
+pnpm --filter @community/admin-dashboard set-admin set admin@company.com
 
-# Consider disabling bootstrap functions after initial grants
 # Monitor logs
-firebase functions:log --only setAdminClaim,setPartnerClaim
+firebase functions:log
 ```
 
 ### Pre-Launch Checklist
 
-- [ ] Firebase function secrets configured
-- [ ] CORS origins updated for production
 - [ ] Firestore security rules deployed
 - [ ] `system` venue bypass removed
 - [ ] SSL certificates active
@@ -175,7 +171,6 @@ firebase functions:log --only setAdminClaim,setPartnerClaim
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| Functions returning 503 | Bootstrap secrets not set | `firebase functions:config:set admin.bootstrap_secret="..."` |
 | CORS errors in production | Domain not in allowedOrigins | Update Cloud Functions with production domains, redeploy |
 | "Permission denied" on Firestore | Rules not deployed or wrong role | Deploy rules, verify user custom claims in Firebase Console |
 | "Port already in use" | Leftover process | `kill -9 $(lsof -ti:3000)` |

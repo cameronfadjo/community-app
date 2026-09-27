@@ -144,5 +144,54 @@ All major consumer features implemented:
 
 ---
 
-*Last consolidated: March 30, 2026*
+## Activity-First Rebuild (September 2026)
+
+The consumer app was refocused from a venue directory with a social feed to
+a going-out app: pick an activity, see what's on, go.
+
+### What changed
+
+- **Events are the core unit.** Each event has one to three activities, a
+  venue, start and end times, cover, tags, and an optional perk.
+- **Activities are data.** They live in the `activities` collection and are
+  managed by admins. A starting set of 26 is seeded by
+  `pnpm --filter @community/admin-dashboard seed:activities`.
+- **Browsing needs no account.** The app opens to Tonight. Sign-in is asked
+  for only when unlocking a perk at the door.
+- **Partners post their own events** from the partner dashboard, with weekly
+  repeat. Events publish immediately.
+- **Perks unlock on arrival** (within 150 m), last 15 minutes, and are
+  redeemed by staff pressing and holding a button on the person's phone.
+- **New visual style:** light background, Nunito, and the six rainbow flag
+  colors assigned to activities.
+
+### What was removed
+
+- Community feed, check-in posts, and likes
+- Favorites, written reviews, and venue pages in the consumer app
+- The old offers system (claim codes, QR, offer analytics)
+- The approval step for new consumer accounts
+
+Venues and reviews still exist in Firestore and in the dashboards.
+
+### Server functions
+
+- Run on Node.js 22 with `firebase-functions` 7 (first-generation functions)
+- Built automatically before each deploy
+- `setAdminClaim` and `setPartnerClaim` were removed. They relied on a
+  configuration feature that no longer exists, and roles are granted with
+  scripts instead.
+
+### Still open
+
+- Moderation pages in the partner dashboard should move to the admin dashboard
+- `'system'` venue creation bypass is still in `firestore.rules`
+- Busy level ("Filling up") is not yet calculated from real arrivals
+- The Map tab is a nearest-first list; an interactive map needs native setup
+- Event photo upload
+- Push notifications
+
+---
+
+*Last consolidated: September 27, 2026*
 *Sources: PROJECT_STATUS.md, PHASE_2_COMPLETE.md, PHASE_3_COMPLETE.md, PHASE_4_STATUS.md, ADMIN_ARCHITECTURE.md, ENHANCEMENTS_SUMMARY.md, SYSTEM_FIXES.md*

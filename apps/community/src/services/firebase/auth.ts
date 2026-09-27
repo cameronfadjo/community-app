@@ -10,8 +10,9 @@ import {
   User as FirebaseUser,
   UserCredential,
 } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
 import { getAuthErrorMessage } from '@community/firebase';
-import { auth } from './config';
+import { auth, functions } from './config';
 
 /**
  * Register a new user with email and password
@@ -93,6 +94,26 @@ export const resetPassword = async (email: string): Promise<void> => {
     console.error('Error sending password reset email:', error);
     throw new Error(getAuthErrorMessage(error.code));
   }
+};
+
+/**
+ * Delete the current user's account and everything tied to it.
+ * The removal runs on the server; this then clears the local sign-in.
+ */
+export const deleteAccount = async (): Promise<void> => {
+  try {
+    await httpsCallable(functions, 'deleteMyAccount')();
+  } catch (error: any) {
+    console.error('Error deleting account:', error);
+    if (error.code === 'functions/failed-precondition') {
+      throw new Error('Partner and admin accounts are closed by contacting us.');
+    }
+    throw new Error("We couldn't delete your account. Check your connection and try again.");
+  }
+
+  // The account no longer exists, so a failure here only means the
+  // sign-in was already cleared
+  await firebaseSignOut(auth).catch(() => undefined);
 };
 
 /**

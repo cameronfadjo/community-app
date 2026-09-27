@@ -15,8 +15,6 @@ import { storage } from './config';
 export const STORAGE_PATHS = {
   USER_PROFILES: 'users',
   VENUES: 'venues',
-  REVIEWS: 'reviews',
-  CHECK_INS: 'checkIns',
 } as const;
 
 /**
@@ -106,30 +104,5 @@ export const uploadVenueImage = async (
   index: number
 ): Promise<string> => {
   const path = `${STORAGE_PATHS.VENUES}/${venueId}/${Date.now()}_${index}.jpg`;
-  return uploadFile(path, file, { contentType: 'image/jpeg' });
-};
-
-/**
- * Upload review image
- */
-export const uploadReviewImage = async (
-  reviewId: string,
-  file: Blob | Uint8Array | ArrayBuffer,
-  index: number
-): Promise<string> => {
-  const path = `${STORAGE_PATHS.REVIEWS}/${reviewId}/${Date.now()}_${index}.jpg`;
-  return uploadFile(path, file, { contentType: 'image/jpeg' });
-};
-
-/**
- * Upload check-in image
- */
-export const uploadCheckInImage = async (
-  userId: string,
-  checkInId: string,
-  file: Blob | Uint8Array | ArrayBuffer,
-  index: number
-): Promise<string> => {
-  const path = `${STORAGE_PATHS.CHECK_INS}/${userId}/${checkInId}/${Date.now()}_${index}.jpg`;
   return uploadFile(path, file, { contentType: 'image/jpeg' });
 };

@@ -36,21 +36,5 @@ service firebase.storage {
                       isValidImageType() &&
                       isValidImageSize();
     }
-
-    // Review images
-    match /reviews/{reviewId}/{fileName} {
-      allow read: if true;
-      allow write: if isAuthenticated() &&
-                      isValidImageType() &&
-                      isValidImageSize();
-    }
-
-    // Check-in images
-    match /checkIns/{userId}/{checkInId}/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(userId) &&
-                      isValidImageType() &&
-                      isValidImageSize();
-    }
   }
 }

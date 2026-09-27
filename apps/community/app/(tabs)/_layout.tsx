@@ -1,66 +1,47 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { COLORS } from '../../src/constants/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { COLORS, FONTS } from '../../src/constants/theme';
+
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+const tabIcon =
+  (name: IconName) =>
+  ({ color }: { color: string }) => <MaterialCommunityIcons name={name} size={26} color={color} />;
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textTertiary,
+        headerShown: false,
+        tabBarActiveTintColor: COLORS.primaryDark,
+        tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.border,
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom + 8,
         },
-        headerStyle: {
-          backgroundColor: COLORS.primary,
-        },
-        headerTintColor: COLORS.textInverse,
-        headerTitleStyle: {
-          fontWeight: '600',
+        tabBarLabelStyle: {
+          fontFamily: FONTS.bold,
+          fontSize: 12,
         },
       }}
     >
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🗺️</span>,
-          headerTitle: 'Explore Community',
-        }}
+        name="tonight"
+        options={{ title: 'Tonight', tabBarIcon: tabIcon('moon-waning-crescent') }}
       />
+      <Tabs.Screen name="map" options={{ title: 'Map', tabBarIcon: tabIcon('map-outline') }} />
       <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>❤️</span>,
-          headerTitle: 'My Favorites',
-        }}
+        name="perks"
+        options={{ title: 'Perks', tabBarIcon: tabIcon('ticket-confirmation-outline') }}
       />
-      <Tabs.Screen
-        name="my-offers"
-        options={{
-          title: 'Offers',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🎁</span>,
-          headerTitle: 'My Offers',
-        }}
-      />
-      <Tabs.Screen
-        name="social"
-        options={{
-          title: 'Social',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>🌈</span>,
-          headerTitle: 'Community Feed',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <span style={{ fontSize: 24 }}>👤</span>,
-          headerTitle: 'My Profile',
-        }}
-      />
+
     </Tabs>
   );
 }

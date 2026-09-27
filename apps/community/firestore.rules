@@ -17,6 +17,12 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(userId)).data.moderationStatus == 'approved';
     }
 
+    // True only for an account an admin has blocked
+    function isRejected(userId) {
+      let profile = /databases/$(database)/documents/users/$(userId);
+      return exists(profile) && get(profile).data.moderationStatus == 'rejected';
+    }
+
     function isPartner() {
       return isAuthenticated() && request.auth.token.role == 'partner';
     }
@@ -37,10 +43,11 @@ service cloud.firestore {
                      resource.data.moderationStatus == 'approved' ||
                      isPartnerOrAdmin();
 
-      // Users can create their own profile
+      // Users can create their own profile. There is no approval step:
+      // accounts start approved, and an admin can reject one to block it.
       allow create: if isOwner(userId) &&
                        request.resource.data.uid == userId &&
-                       request.resource.data.moderationStatus == 'pending';
+                       request.resource.data.moderationStatus == 'approved';
 
       // Users can update their own profile (but not moderation status)
       // Partners can update any user's moderation status and verified flag
@@ -72,6 +79,84 @@ service cloud.firestore {
                        isPartnerOrAdmin();
     }
 
+    // Activities collection (dancing, drag shows, book clubs, ...)
+    match /activities/{activityId} {
+      // Public: the app is browsable without an account
+      allow read: if true;
+
+      // Only admins manage the list
+      allow write: if isAdmin();
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      // Public: the app is browsable without an account
+      allow read: if true;
+
+      // Partners post their own events, which publish immediately.
+      // Organizers can host at venues they don't own, so venue ownership
+      // is not checked here; admins can take an event down.
+      allow create: if isAdmin() ||
+                       (isPartner() &&
+                        request.resource.data.organizerId == request.auth.uid &&
+                        request.resource.data.status == 'scheduled' &&
+                        request.resource.data.activityIds.size() > 0 &&
+                        request.resource.data.endsAt > request.resource.data.startsAt);
+
+      // Organizers can edit or cancel their own events, but not hand them to someone else
+      allow update: if isAdmin() ||
+                       (isPartner() &&
+                        resource.data.organizerId == request.auth.uid &&
+                        request.resource.data.organizerId == resource.data.organizerId &&
+                        request.resource.data.endsAt > request.resource.data.startsAt);
+
+      allow delete: if isAdmin() ||
+                       (isPartner() && resource.data.organizerId == request.auth.uid);
+    }
+
+    // Perks unlocked on arrival. One per person per event.
+    match /perkRedemptions/{redemptionId} {
+      // Only the person who unlocked it. Organizers read totals from
+      // eventStats, so they never see which accounts used their perk.
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+
+      // Any signed-in person can unlock a perk for themselves. The ID ties it
+      // to one event and one person, and the details must match the event.
+      allow create: if isOwner(request.resource.data.userId) &&
+                       !isRejected(request.auth.uid) &&
+                       redemptionId == request.resource.data.eventId + '_' + request.auth.uid &&
+                       exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+                       matchesEvent(request.resource.data) &&
+                       request.resource.data.unlockedAt == request.time &&
+                       request.resource.data.expiresAt > request.time &&
+                       // The app sets 15 minutes; the extra allows for a phone clock that runs fast
+                       request.resource.data.expiresAt <= request.time + duration.value(20, 'm') &&
+                       !('redeemedAt' in request.resource.data);
+
+      // The only change allowed is redeeming it once, before it expires
+      allow update: if isOwner(resource.data.userId) &&
+                       !('redeemedAt' in resource.data) &&
+                       request.time < resource.data.expiresAt &&
+                       request.resource.data.redeemedAt == request.time &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemedAt']);
+
+      allow delete: if false;
+
+      function matchesEvent(redemption) {
+        let event = get(/databases/$(database)/documents/events/$(redemption.eventId)).data;
+        return event.status == 'scheduled' &&
+               'perkLabel' in event &&
+               redemption.perkLabel == event.perkLabel &&
+               request.time < event.endsAt;
+      }
+    }
+
+    // Perk totals per event, written only by Cloud Functions
+    match /eventStats/{eventId} {
+      allow read: if isOwner(resource.data.organizerId) || isAdmin();
+      allow write: if false;
+    }
+
     // Reviews collection
     match /reviews/{reviewId} {
       // Anyone can read reviews
@@ -86,25 +171,6 @@ service cloud.firestore {
 
       // Users can delete their own reviews, or partners can delete any review
       allow delete: if isOwner(resource.data.userId) || isPartnerOrAdmin();
-    }
-
-    // Check-ins collection
-    match /checkIns/{checkInId} {
-      // Public check-ins are readable by all
-      // Friends check-ins would require a friends collection (future enhancement)
-      // Private check-ins only by owner
-      allow read: if resource.data.visibility == 'public' ||
-                     isOwner(resource.data.userId);
-
-      // Authenticated, approved users can create check-ins
-      allow create: if isApproved(request.auth.uid) &&
-                       request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own check-ins
-      allow update: if isOwner(resource.data.userId);
-
-      // Users can delete their own check-ins
-      allow delete: if isOwner(resource.data.userId);
     }
 
     // Admin collection (moderation)

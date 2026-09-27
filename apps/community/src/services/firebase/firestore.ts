@@ -27,12 +27,10 @@ import { db } from './config';
 export const COLLECTIONS = {
   USERS: 'users',
   VENUES: 'venues',
-  REVIEWS: 'reviews',
-  CHECK_INS: 'checkIns',
-  OFFERS: 'offers',
-  REDEMPTIONS: 'redemptions',
-  ANALYTICS_EVENTS: 'analytics_events',
-  AGGREGATED_ANALYTICS: 'aggregated_analytics',
+  EVENTS: 'events',
+  ACTIVITIES: 'activities',
+  PERK_REDEMPTIONS: 'perkRedemptions',
+  EVENT_STATS: 'eventStats',
 } as const;
 
 /**
@@ -125,7 +123,7 @@ export const queryDocuments = async <T extends DocumentData>(
     return querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as T[];
+    })) as unknown as T[];
   } catch (error) {
     console.error(`Error querying documents from ${collectionName}:`, error);
     throw error;
@@ -154,7 +152,7 @@ export const queryDocumentsWithPagination = async <T extends DocumentData>(
     const data = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as T[];
+    })) as unknown as T[];
 
     const lastDocument =
       querySnapshot.docs.length > 0
