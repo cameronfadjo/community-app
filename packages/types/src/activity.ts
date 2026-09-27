@@ -32,6 +32,31 @@ export interface Activity {
 
 export type ActivitySeed = Omit<Activity, 'createdAt' | 'updatedAt'>;
 
+// Letters are not all the same width. These are rough, measured against
+// names that do and don't fit: "workshops" fits and "performance" doesn't.
+const NARROW_LETTERS = 'fijlrtI';
+const WIDE_LETTERS = 'mwMW';
+const NARROW_WIDTH = 0.6;
+const WIDE_WIDTH = 1.5;
+
+/** A word wider than this many average letters doesn't fit across a tile at full size */
+export const TILE_WORD_LIMIT = 9.6;
+
+const estimateWidth = (word: string): number =>
+  [...word].reduce((width, letter) => {
+    if (WIDE_LETTERS.includes(letter)) return width + WIDE_WIDTH;
+    if (NARROW_LETTERS.includes(letter)) return width + NARROW_WIDTH;
+    return width + 1;
+  }, 0);
+
+/**
+ * True when a name has a word too wide for a tile, so the tile can use
+ * smaller type and show the whole name. Names are data, so any length can
+ * turn up.
+ */
+export const hasLongWord = (label: string): boolean =>
+  label.split(/[\s-]+/).some((word) => estimateWidth(word) > TILE_WORD_LIMIT);
+
 /** Colors repeat once there are more than six activities. */
 export const activityColorForIndex = (index: number): ActivityColor =>
   ACTIVITY_COLORS[index % ACTIVITY_COLORS.length] as ActivityColor;

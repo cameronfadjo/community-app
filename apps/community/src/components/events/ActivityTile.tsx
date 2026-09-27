@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ActivityColor } from '../../types';
+import { ActivityColor, hasLongWord } from '../../types';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../constants/theme';
 import { ActivityIcon } from './ActivityIcon';
 
@@ -36,7 +36,7 @@ export const ActivityTile: React.FC<ActivityTileProps> = ({
     >
       <ActivityIcon icon={icon} color={palette.shade} />
       <View>
-        <Text style={styles.label} numberOfLines={3}>
+        <Text style={[styles.label, hasLongWord(label) && styles.labelSmall]} numberOfLines={3}>
           {label}
         </Text>
         <Text style={styles.count}>{`${hasEvents ? count : 'None'} ${period}`}</Text>
@@ -63,6 +63,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 19,
     color: COLORS.text,
+  },
+  // For a name with a long word, which would otherwise be cut off
+  labelSmall: {
+    fontSize: 12.5,
+    lineHeight: 16,
   },
   count: {
     fontFamily: FONTS.regular,
