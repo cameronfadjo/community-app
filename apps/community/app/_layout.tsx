@@ -39,7 +39,7 @@ export default function RootLayout() {
       // Someone who signed in to unlock a perk goes back to that event
       const { pendingReturnPath, setPendingReturnPath } = usePerkStore.getState();
       setPendingReturnPath(null);
-      router.replace((pendingReturnPath ?? '/(tabs)/tonight') as never);
+      router.replace((pendingReturnPath ?? '/(tabs)/whats-on') as never);
     }
   }, [isAuthenticated, initialized, segments]);
 
@@ -50,7 +50,7 @@ export default function RootLayout() {
     load().then(reschedule);
 
     return onNotificationOpened((eventId) => {
-      router.push((eventId ? `/event/${eventId}` : '/(tabs)/tonight') as never);
+      router.push((eventId ? `/event/${eventId}` : '/(tabs)/whats-on') as never);
     });
   }, []);
 

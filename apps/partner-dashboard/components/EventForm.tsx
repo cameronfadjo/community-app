@@ -6,12 +6,14 @@ import {
   MAX_DESCRIPTION_LENGTH,
   MAX_TITLE_LENGTH,
   buildEventOccurrences,
+  describeRecurrence,
   parseCoverToCents,
   resolveEventTimes,
   validateEventForm,
   type EventFormData,
   type EventFormErrors,
   type EventListing,
+  type EventRepeat,
   type MinimumAge,
   type Venue,
 } from '@community/types';
@@ -44,6 +46,13 @@ const AGE_OPTIONS: Array<{ value: MinimumAge; label: string }> = [
   { value: 0, label: 'All ages' },
   { value: 18, label: '18+' },
   { value: 21, label: '21+' },
+];
+
+const REPEAT_OPTIONS: Array<{ value: EventRepeat; label: string }> = [
+  { value: 'none', label: "Doesn't repeat" },
+  { value: 'weekly', label: 'Every week' },
+  { value: 'every_two_weeks', label: 'Every two weeks' },
+  { value: 'monthly', label: 'Every month' },
 ];
 
 const inputClass =
@@ -107,7 +116,7 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
   const [date, setDate] = useState(keepDate && initialStart ? toDateInput(initialStart) : '');
   const [startTime, setStartTime] = useState(initialStart ? toTimeInput(initialStart) : '');
   const [endTime, setEndTime] = useState(initialEnd ? toTimeInput(initialEnd) : '');
-  const [repeats, setRepeats] = useState(false);
+  const [repeat, setRepeat] = useState<EventRepeat>('none');
   const [repeatUntil, setRepeatUntil] = useState('');
   const [cover, setCover] = useState(
     initial && initial.coverCents > 0 ? (initial.coverCents / 100).toString() : '',
@@ -152,14 +161,16 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
   const endsNextDay = times ? times.endsAt.getDate() !== times.startsAt.getDate() : false;
 
   const repeatCount = useMemo(() => {
-    if (!times || !repeats || !repeatUntil) return null;
+    if (!times || repeat === 'none' || !repeatUntil) return null;
     const until = resolveEventTimes(repeatUntil, '00:00', '00:01');
     if (!until) return null;
     return buildEventOccurrences(
-      { startsAt: times.startsAt, endsAt: times.endsAt, repeatWeeklyUntil: until.startsAt },
+      { startsAt: times.startsAt, endsAt: times.endsAt, repeat, repeatUntil: until.startsAt },
       () => 'preview',
     ).length;
-  }, [times, repeats, repeatUntil]);
+  }, [times, repeat, repeatUntil]);
+
+  const repeatSummary = times && repeat !== 'none' ? describeRecurrence(times.startsAt, repeat) : null;
 
   const toggleActivity = (id: string) => {
     setActivityIds((current) =>
@@ -178,7 +189,9 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
 
     const invalidDate = new Date(NaN);
     const repeatDate =
-      repeats && repeatUntil ? resolveEventTimes(repeatUntil, '00:00', '00:01')?.startsAt : undefined;
+      repeat !== 'none' && repeatUntil
+        ? resolveEventTimes(repeatUntil, '00:00', '00:01')?.startsAt
+        : undefined;
 
     const form: EventFormData = {
       title,
@@ -188,7 +201,8 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
       organizerName: organizerName || undefined,
       startsAt: times?.startsAt ?? invalidDate,
       endsAt: times?.endsAt ?? invalidDate,
-      repeatWeeklyUntil: repeatDate,
+      repeat: mode === 'create' ? repeat : 'none',
+      repeatUntil: repeatDate,
       coverCents: coverCents ?? 0,
       ticketUrl: ticketUrl || undefined,
       images: initial?.images ?? [],
@@ -202,9 +216,6 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
     };
 
     const found = validateEventForm(form, Date.now(), { isEditing: mode === 'edit' });
-    if (repeats && !repeatUntil) {
-      found.repeatWeeklyUntil = 'Choose the last date it repeats.';
-    }
     setErrors(found);
 
     const venue = venues.find((item) => item.id === venueId);
@@ -347,25 +358,39 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
 
         {mode === 'create' && (
           <div className="rounded-lg border border-gray-200 p-4 space-y-4">
-            <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300"
-                checked={repeats}
-                onChange={(e) => setRepeats(e.target.checked)}
-              />
-              Repeats every week
-            </label>
-            {repeats && (
+            <Field
+              label="Repeats"
+              htmlFor="repeat"
+              hint={
+                repeatSummary ??
+                (repeat === 'monthly'
+                  ? 'Keeps the same weekday, such as the 3rd Saturday. Choose the first date above.'
+                  : undefined)
+              }
+            >
+              <select
+                id="repeat"
+                className={inputClass}
+                value={repeat}
+                onChange={(e) => setRepeat(e.target.value as EventRepeat)}
+              >
+                {REPEAT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {repeat !== 'none' && (
               <Field
                 label="Last date"
                 htmlFor="repeat-until"
                 hint={
                   repeatCount
                     ? `This will post ${repeatCount} event${repeatCount === 1 ? '' : 's'}. Each can be edited or cancelled on its own.`
-                    : 'Up to 26 weeks at a time.'
+                    : 'Up to 26 events at a time.'
                 }
-                error={errors.repeatWeeklyUntil}
+                error={errors.repeatUntil}
               >
                 <input
                   id="repeat-until"
@@ -418,7 +443,7 @@ export function EventForm({ mode, initial, submitLabel, onSubmit, onCancel }: Ev
         <Field
           label="Perk on arrival (optional)"
           htmlFor="perk"
-          hint='A reason to come tonight, shown as "Free drink when you arrive". People show their phone at the bar.'
+          hint='A reason to come, shown as "Free drink when you arrive". People show their phone at the bar.'
         >
           <input
             id="perk"

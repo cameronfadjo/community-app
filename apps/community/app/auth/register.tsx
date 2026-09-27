@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthDivider, AuthMessage, AuthScreen, Button, Input } from '../../src/components';
 import { useAuth } from '../../src/hooks';
@@ -90,15 +90,20 @@ export default function RegisterScreen() {
     >
       <AuthMessage message={message} />
 
-      <Button
-        title="Continue with Google"
-        variant="outline"
-        onPress={handleGoogleSignIn}
-        loading={loading}
-        fullWidth
-      />
+      {/* Google sign-in opens a browser popup, which phones don't have */}
+      {Platform.OS === 'web' && (
+        <>
+          <Button
+            title="Continue with Google"
+            variant="outline"
+            onPress={handleGoogleSignIn}
+            loading={loading}
+            fullWidth
+          />
 
-      <AuthDivider label="or use email" />
+          <AuthDivider label="or use email" />
+        </>
+      )}
 
       <Input
         label="Name"

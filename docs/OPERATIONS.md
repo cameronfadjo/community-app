@@ -25,7 +25,7 @@ pnpm --filter @community/partner-dashboard dev   # http://localhost:3001
 
 ### Verify Setup
 
-- [ ] Community App: opens to Tonight at localhost:8081 without signing in
+- [ ] Community App: opens to What's on at localhost:8081 without signing in
 - [ ] Admin Dashboard: Login page at localhost:3000, no console errors
 - [ ] Partner Dashboard: Login page at localhost:3001, no console errors
 - [ ] Firebase connected (login attempt doesn't show "Firebase not initialized")

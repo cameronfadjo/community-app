@@ -15,7 +15,7 @@ import { LoadingSpinner } from '../../src/components';
 import { useEventStore } from '../../src/store/eventStore';
 import { EVERYTHING_ID, useActivityLookup } from '../../src/hooks/useActivityLookup';
 import { getCurrentLocation } from '../../src/utils/location';
-import { formatDayPart, getTimingFor } from '../../src/utils/events';
+import { capitalize, formatDayPart, formatPeriod, getTimingFor } from '../../src/utils/events';
 import { Activity, countEventsByActivity } from '../../src/types';
 import { COLORS, FONTS } from '../../src/constants/theme';
 
@@ -23,6 +23,7 @@ const COLUMNS = 3;
 // Tiles shown before "All activities" is opened, leaving one slot for Everything
 const COLLAPSED_ACTIVITY_COUNT = 8;
 const STARTING_SOON_COUNT = 4;
+const LATER_THIS_WEEK_COUNT = 6;
 
 interface Tile {
   id: string;
@@ -37,12 +38,14 @@ const chunk = <T,>(items: T[], size: number): T[][] => {
   return rows;
 };
 
-export default function TonightScreen() {
+export default function WhatsOnScreen() {
   const router = useRouter();
   const { forActivity, forEvent } = useActivityLookup();
   const {
     activities,
     tonightEvents,
+    homeEvents,
+    homeScope,
     userLocation,
     loading,
     loaded,
@@ -72,7 +75,9 @@ export default function TonightScreen() {
     }
   }, [setUserLocation]);
 
-  const counts = useMemo(() => countEventsByActivity(tonightEvents), [tonightEvents]);
+  const counts = useMemo(() => countEventsByActivity(homeEvents), [homeEvents]);
+  const period = formatPeriod(homeScope, new Date(nowMs));
+  const today = formatPeriod('today', new Date(nowMs));
 
   // Activities with something on come first, busiest at the top
   const rankedActivities = useMemo(
@@ -88,9 +93,9 @@ export default function TonightScreen() {
     const visible = showAll ? rankedActivities : rankedActivities.slice(0, COLLAPSED_ACTIVITY_COUNT);
     return [
       ...visible.map((activity) => ({ id: activity.id, count: counts[activity.id] ?? 0 })),
-      { id: EVERYTHING_ID, count: tonightEvents.length },
+      { id: EVERYTHING_ID, count: homeEvents.length },
     ];
-  }, [showAll, rankedActivities, counts, tonightEvents.length]);
+  }, [showAll, rankedActivities, counts, homeEvents.length]);
 
   const startingSoon = useMemo(
     () =>
@@ -98,6 +103,33 @@ export default function TonightScreen() {
         .filter((event) => getTimingFor(event, nowMs).state !== 'ended')
         .slice(0, STARTING_SOON_COUNT),
     [tonightEvents, nowMs]
+  );
+
+  // Shown when today is thin, so there is always somewhere to go
+  const laterThisWeek = useMemo(() => {
+    if (homeScope !== 'week') {
+      return [];
+    }
+    const todayIds = new Set(tonightEvents.map((event) => event.id));
+    return homeEvents.filter((event) => !todayIds.has(event.id)).slice(0, LATER_THIS_WEEK_COUNT);
+  }, [homeScope, homeEvents, tonightEvents]);
+
+  const renderRows = (events: typeof homeEvents) => (
+    <View style={styles.rows}>
+      {events.map((event) => {
+        const appearance = forEvent(event);
+        return (
+          <EventRow
+            key={event.id}
+            event={event}
+            nowMs={nowMs}
+            color={appearance.color}
+            icon={appearance.icon}
+            onPress={() => router.push(`/event/${event.id}`)}
+          />
+        );
+      })}
+    </View>
   );
 
   if (!loaded) {
@@ -155,6 +187,7 @@ export default function TonightScreen() {
                     icon={appearance.icon}
                     color={appearance.color}
                     count={tile.count}
+                    period={period}
                     onPress={() => router.push(`/activity/${tile.id}`)}
                   />
                 );
@@ -188,37 +221,47 @@ export default function TonightScreen() {
           title="Just pick for me"
           icon="shimmer"
           onPress={() => router.push('/pick')}
-          disabled={tonightEvents.length === 0}
+          disabled={homeEvents.length === 0}
         />
 
-        <View>
-          <Text style={styles.sectionTitle}>
-            {userLocation ? 'Starting soon near you' : 'Starting soon'}
-          </Text>
+        {(homeScope === 'today' || startingSoon.length > 0) && (
+          <View>
+            <Text style={styles.sectionTitle}>
+              {homeScope === 'week'
+                ? capitalize(today)
+                : userLocation
+                  ? 'Starting soon near you'
+                  : 'Starting soon'}
+            </Text>
+            {startingSoon.length === 0 ? (
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>{`Nothing on ${today} yet`}</Text>
+                <Text style={styles.emptyText}>Check back later, or look at the weekend.</Text>
+              </View>
+            ) : (
+              renderRows(startingSoon)
+            )}
+          </View>
+        )}
 
-          {startingSoon.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Nothing on tonight yet</Text>
-              <Text style={styles.emptyText}>Check back later, or look at the weekend.</Text>
-            </View>
-          ) : (
-            <View style={styles.rows}>
-              {startingSoon.map((event) => {
-                const appearance = forEvent(event);
-                return (
-                  <EventRow
-                    key={event.id}
-                    event={event}
-                    nowMs={nowMs}
-                    color={appearance.color}
-                    icon={appearance.icon}
-                    onPress={() => router.push(`/event/${event.id}`)}
-                  />
-                );
-              })}
-            </View>
-          )}
-        </View>
+        {homeScope === 'week' && (
+          <View>
+            <Text style={styles.sectionTitle}>
+              {startingSoon.length > 0 ? 'Later this week' : 'On this week'}
+            </Text>
+            {startingSoon.length === 0 && laterThisWeek.length > 0 && (
+              <Text style={styles.sectionNote}>{`It's quiet ${today}. Here's what's coming up.`}</Text>
+            )}
+            {laterThisWeek.length === 0 ? (
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>Nothing else on this week yet</Text>
+                <Text style={styles.emptyText}>Venues post through the week, so check back.</Text>
+              </View>
+            ) : (
+              renderRows(laterThisWeek)
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -315,6 +358,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.black,
     fontSize: 21,
     color: COLORS.text,
+    marginBottom: 12,
+  },
+  sectionNote: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: -6,
     marginBottom: 12,
   },
   rows: {

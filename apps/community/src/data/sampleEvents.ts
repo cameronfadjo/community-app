@@ -2,9 +2,11 @@ import { GeoPoint, Timestamp } from 'firebase/firestore';
 import { Activity, DEFAULT_ACTIVITIES, EventListing, EventTags } from '../types';
 
 // Sample data for development, shown only when Firestore has no events.
-// Times are relative to now so there is always something on.
+// Times are relative to now so there is always something on, today and
+// later in the week.
 
 const MINUTE = 60 * 1000;
+const DAY_MINUTES = 24 * 60;
 
 const tags = (overrides: Partial<EventTags> = {}): EventTags => ({
   goodForSolo: false,
@@ -200,7 +202,59 @@ export const buildSampleEvents = (nowMs: number = Date.now()): EventListing[] =>
       },
       nowMs
     ),
-  ];
+    build(
+      {
+        id: 'sample_event_trivia',
+        title: 'Pub trivia',
+        description: 'Teams of up to six. Turn up alone and the host will find you a team.',
+        activityIds: ['trivia'],
+        venue: 'twinPeaks',
+        startsInMinutes: DAY_MINUTES + 30,
+        durationMinutes: 120,
+        coverCents: 0,
+        tags: tags({ goodForSolo: true, firstTimersWelcome: true }),
+        audience: ['Everyone welcome'],
+        perkLabel: 'Free appetizer',
+      },
+      nowMs
+    ),
+    build(
+      {
+        id: 'sample_event_hangout',
+        title: 'Third Saturday hangout',
+        description: 'Coffee, board games, and easy conversation. Hosted by the community center.',
+        activityIds: ['community-hangouts', 'game-nights'],
+        venue: 'frances',
+        startsInMinutes: 3 * DAY_MINUTES,
+        durationMinutes: 120,
+        coverCents: 0,
+        tags: tags({
+          goodForSolo: true,
+          firstTimersWelcome: true,
+          alcoholFree: true,
+          stepFreeEntry: true,
+          minimumAge: 18,
+        }),
+        audience: ['Everyone welcome'],
+      },
+      nowMs
+    ),
+    build(
+      {
+        id: 'sample_event_watch_party',
+        title: 'Drag Race watch party',
+        description: 'The episode on the big screen, with a live show in the breaks.',
+        activityIds: ['watch-parties', 'drag-shows'],
+        venue: 'stud',
+        startsInMinutes: 5 * DAY_MINUTES,
+        durationMinutes: 180,
+        coverCents: 0,
+        tags: tags({ firstTimersWelcome: true, stepFreeEntry: true }),
+        audience: ['Everyone welcome'],
+      },
+      nowMs
+    ),
+  ].sort((a, b) => a.startsAt.toMillis() - b.startsAt.toMillis());
 
 export const buildSampleActivities = (): Activity[] => {
   const stamp = Timestamp.now();

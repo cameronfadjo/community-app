@@ -29,7 +29,12 @@ const ICONS: Record<string, IconName> = {
   activity: 'run',
   tree: 'pine-tree',
   utensils: 'silverware-fork-knife',
-  'life-buoy': 'lifebuoy',
+  sofa: 'sofa-outline',
+  handshake: 'handshake-outline',
+  swords: 'sword-cross',
+  tv: 'television-classic',
+  masks: 'drama-masks',
+  store: 'storefront-outline',
   flag: 'flag-outline',
   everything: 'dots-horizontal',
 };

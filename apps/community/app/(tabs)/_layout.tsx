@@ -33,8 +33,8 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="tonight"
-        options={{ title: 'Tonight', tabBarIcon: tabIcon('moon-waning-crescent') }}
+        name="whats-on"
+        options={{ title: "What's on", tabBarIcon: tabIcon('calendar-star') }}
       />
       <Tabs.Screen name="map" options={{ title: 'Map', tabBarIcon: tabIcon('map-outline') }} />
       <Tabs.Screen

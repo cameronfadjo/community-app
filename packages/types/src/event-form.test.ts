@@ -28,6 +28,7 @@ const validForm = (overrides: Partial<EventFormData> = {}): EventFormData => ({
     minimumAge: 21,
   },
   audience: [],
+  repeat: 'none',
   ...overrides,
 });
 
@@ -128,10 +129,10 @@ describe('validateEventForm', () => {
 
   it('rejects a repeat end date before the first event', () => {
     const errors = validateEventForm(
-      validForm({ repeatWeeklyUntil: new Date(2026, 9, 1) }),
+      validForm({ repeat: 'weekly', repeatUntil: new Date(2026, 9, 1) }),
       now
     );
-    expect(errors.repeatWeeklyUntil).toBeDefined();
+    expect(errors.repeatUntil).toBeDefined();
   });
 });
 
@@ -148,7 +149,7 @@ describe('buildEventOccurrences', () => {
 
   it('builds weekly occurrences that share a series and keep their length', () => {
     const occurrences = buildEventOccurrences(
-      validForm({ repeatWeeklyUntil: new Date(2026, 9, 16) }),
+      validForm({ repeat: 'weekly', repeatUntil: new Date(2026, 9, 16) }),
       () => 'series_1'
     );
     expect(occurrences.map((o) => new Date(o.startsAtMs))).toEqual([
@@ -160,10 +161,28 @@ describe('buildEventOccurrences', () => {
     expect(occurrences.every((o) => o.endsAtMs - o.startsAtMs === 4 * HOUR)).toBe(true);
   });
 
+  it('builds monthly occurrences on the same numbered weekday', () => {
+    // The form's start is the 1st Friday of October 2026
+    const occurrences = buildEventOccurrences(
+      validForm({ repeat: 'monthly', repeatUntil: new Date(2026, 11, 31) }),
+      () => 'series_1'
+    );
+    expect(occurrences.map((o) => new Date(o.startsAtMs))).toEqual([
+      new Date(2026, 9, 2, 22, 0),
+      new Date(2026, 10, 6, 22, 0),
+      new Date(2026, 11, 4, 22, 0),
+    ]);
+    expect(occurrences.every((o) => o.seriesId === 'series_1')).toBe(true);
+  });
+
+  it('asks for an end date when the event repeats', () => {
+    expect(validateEventForm(validForm({ repeat: 'monthly' }), now).repeatUntil).toBeDefined();
+  });
+
   it('includes an event on the last day of the repeat, whatever the time', () => {
     // The date picker gives midnight; a 10 PM event that day still counts
     const occurrences = buildEventOccurrences(
-      validForm({ repeatWeeklyUntil: new Date(2026, 9, 9, 0, 0) }),
+      validForm({ repeat: 'weekly', repeatUntil: new Date(2026, 9, 9, 0, 0) }),
       () => 'series_1'
     );
     expect(occurrences).toHaveLength(2);

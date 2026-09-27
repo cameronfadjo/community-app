@@ -1,13 +1,21 @@
 import { create } from 'zustand';
-import { Activity, EventListing } from '../types';
+import { Activity, EventListing, HomeScope, chooseHomeScope, getTonightWindow, getWhenWindow } from '../types';
 import { getActivities } from '../services/api/activities';
-import { Coordinates, EventWithDistance, getEvent, getEventsTonight } from '../services/api/events';
+import { Coordinates, EventWithDistance, getEvent, getEventsInWindow } from '../services/api/events';
+import { eventsInWindow } from '../utils/events';
 import { calculateDistance } from '../services/firebase/geolocation';
 import { buildSampleActivities, buildSampleEvents } from '../data/sampleEvents';
 
 interface EventState {
   activities: Activity[];
+  /** Everything on in the next seven days, soonest first */
+  weekEvents: EventWithDistance[];
+  /** The part of the week that is on today, until the night ends */
   tonightEvents: EventWithDistance[];
+  /** The week when today is thin, so the app is never empty for lack of a busy night */
+  homeScope: HomeScope;
+  /** What the home screen, the list, and the pick draw from */
+  homeEvents: EventWithDistance[];
   userLocation: Coordinates | null;
   loading: boolean;
   loaded: boolean;
@@ -36,12 +44,26 @@ const addDistance = (events: EventListing[], near: Coordinates | null): EventWit
       : event
   );
 
+const splitForHome = (weekEvents: EventWithDistance[]) => {
+  const tonightEvents = eventsInWindow(weekEvents, getTonightWindow(new Date()));
+  const homeScope = chooseHomeScope(tonightEvents.length);
+  return {
+    weekEvents,
+    tonightEvents,
+    homeScope,
+    homeEvents: homeScope === 'today' ? tonightEvents : weekEvents,
+  };
+};
+
 // Shared by callers that ask while a load is already under way
 let loadInFlight: Promise<void> | null = null;
 
 export const useEventStore = create<EventState>((set, get) => ({
   activities: [],
+  weekEvents: [],
   tonightEvents: [],
+  homeScope: 'today',
+  homeEvents: [],
   userLocation: null,
   loading: false,
   loaded: false,
@@ -51,7 +73,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   setUserLocation: (location) => {
     set({
       userLocation: location,
-      tonightEvents: addDistance(get().tonightEvents, location),
+      ...splitForHome(addDistance(get().weekEvents, location)),
     });
   },
 
@@ -71,10 +93,10 @@ export const useEventStore = create<EventState>((set, get) => ({
       try {
         [activities, events] = await Promise.all([
           getActivities(),
-          getEventsTonight({}, userLocation),
+          getEventsInWindow(getWhenWindow('week', new Date()), {}, userLocation),
         ]);
       } catch (e: any) {
-        console.error('[EventStore] Error loading tonight:', e);
+        console.error('[EventStore] Error loading events:', e);
         error = "We couldn't load what's on. Pull down to try again.";
       }
 
@@ -92,7 +114,7 @@ export const useEventStore = create<EventState>((set, get) => ({
 
       set({
         activities,
-        tonightEvents: events,
+        ...splitForHome(events),
         loading: false,
         loaded: true,
         error,
@@ -107,7 +129,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   findEvent: async (eventId) => {
-    const loaded = get().tonightEvents.find((event) => event.id === eventId);
+    const loaded = get().weekEvents.find((event) => event.id === eventId);
     if (loaded) {
       return loaded;
     }

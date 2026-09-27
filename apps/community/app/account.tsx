@@ -67,7 +67,7 @@ export default function AccountScreen() {
     [perks]
   );
 
-  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/tonight'));
+  const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/whats-on'));
 
   const handleSignOut = async () => {
     setNotice(null);

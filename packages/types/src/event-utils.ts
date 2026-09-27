@@ -3,7 +3,7 @@
  * runs the same in the Expo app, the dashboards, and Cloud Functions.
  */
 
-import type { BusyLevel, EventFilters, EventListing, EventTags } from './event';
+import type { BusyLevel, EventFilters, EventListing, EventRepeat, EventTags } from './event';
 
 export const STARTING_SOON_MINUTES = 60;
 
@@ -56,6 +56,8 @@ export interface WeeklyRecurrence {
   untilMs: number;
   /** Safety cap so a far-off end date can't create hundreds of documents */
   maxInstances?: number;
+  /** 1 repeats every week, 2 every other week */
+  everyWeeks?: number;
 }
 
 export const DEFAULT_MAX_RECURRENCE_INSTANCES = 26;
@@ -68,12 +70,13 @@ export const expandWeeklyRecurrence = ({
   firstStartMs,
   untilMs,
   maxInstances = DEFAULT_MAX_RECURRENCE_INSTANCES,
+  everyWeeks = 1,
 }: WeeklyRecurrence): number[] => {
   const starts = [firstStartMs];
   const next = new Date(firstStartMs);
 
   while (starts.length < maxInstances) {
-    next.setDate(next.getDate() + 7);
+    next.setDate(next.getDate() + 7 * everyWeeks);
     if (next.getTime() > untilMs) {
       break;
     }
@@ -81,6 +84,76 @@ export const expandWeeklyRecurrence = ({
   }
 
   return starts;
+};
+
+export type MonthlyRecurrence = Omit<WeeklyRecurrence, 'everyWeeks'>;
+
+const DAYS_PER_WEEK = 7;
+const LAST = 5;
+
+/** Which one of its weekday a date is within its month: 1 to 4, or 5 for the last */
+const getWeekdayOrdinal = (date: Date): number => Math.ceil(date.getDate() / DAYS_PER_WEEK);
+
+const getDaysInMonth = (year: number, month: number): number => new Date(year, month + 1, 0).getDate();
+
+/** The day of the month the numbered weekday falls on */
+const findWeekdayInMonth = (year: number, month: number, weekday: number, ordinal: number): number => {
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const firstMatch = 1 + ((weekday - firstWeekday + DAYS_PER_WEEK) % DAYS_PER_WEEK);
+  const day = firstMatch + (ordinal - 1) * DAYS_PER_WEEK;
+
+  // A month without a fifth one uses its last
+  return day > getDaysInMonth(year, month) ? day - DAYS_PER_WEEK : day;
+};
+
+/**
+ * Start times for a monthly event that keeps its numbered weekday, such as
+ * the 3rd Saturday. A fifth weekday is treated as the last of each month.
+ */
+export const expandMonthlyRecurrence = ({
+  firstStartMs,
+  untilMs,
+  maxInstances = DEFAULT_MAX_RECURRENCE_INSTANCES,
+}: MonthlyRecurrence): number[] => {
+  const first = new Date(firstStartMs);
+  const weekday = first.getDay();
+  const ordinal = getWeekdayOrdinal(first);
+  const starts = [firstStartMs];
+
+  for (let monthsLater = 1; starts.length < maxInstances; monthsLater += 1) {
+    const month = new Date(first.getFullYear(), first.getMonth() + monthsLater, 1);
+    const day = findWeekdayInMonth(month.getFullYear(), month.getMonth(), weekday, ordinal);
+    const next = new Date(
+      month.getFullYear(),
+      month.getMonth(),
+      day,
+      first.getHours(),
+      first.getMinutes()
+    );
+    if (next.getTime() > untilMs) {
+      break;
+    }
+    starts.push(next.getTime());
+  }
+
+  return starts;
+};
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const ORDINALS = ['1st', '2nd', '3rd', '4th', 'last'];
+
+/** "Every Friday" or "The 3rd Saturday of every month", read from the first date */
+export const describeRecurrence = (firstStart: Date, repeat: Exclude<EventRepeat, 'none'>): string => {
+  const weekday = WEEKDAYS[firstStart.getDay()];
+  if (repeat === 'weekly') {
+    return `Every ${weekday}`;
+  }
+  if (repeat === 'every_two_weeks') {
+    return `Every other ${weekday}`;
+  }
+
+  const ordinal = Math.min(getWeekdayOrdinal(firstStart), LAST);
+  return `The ${ORDINALS[ordinal - 1]} ${weekday} of every month`;
 };
 
 type FilterableEvent = Pick<EventListing, 'activityIds' | 'coverCents' | 'tags'>;
@@ -109,7 +182,7 @@ export const countEventsByActivity = (
   return counts;
 };
 
-export type WhenOption = 'tonight' | 'tomorrow' | 'weekend';
+export type WhenOption = 'tonight' | 'tomorrow' | 'weekend' | 'week';
 
 const atNightEnd = (date: Date, daysLater: number): Date => {
   const result = new Date(date);
@@ -136,6 +209,11 @@ export const getWhenWindow = (when: WhenOption, now: Date): TimeWindow => {
   // The calendar day this night belongs to
   const nightOf = new Date(now);
   nightOf.setHours(nightOf.getHours() - NIGHT_ENDS_AT_HOUR);
+
+  if (when === 'week') {
+    return { startMs: now.getTime(), endMs: atNightEnd(nightOf, DAYS_PER_WEEK).getTime() };
+  }
+
   const day = nightOf.getDay();
   const FRIDAY = 5;
 
@@ -149,6 +227,29 @@ export const getWhenWindow = (when: WhenOption, now: Date): TimeWindow => {
     startMs: atNightEnd(nightOf, FRIDAY - day).getTime(),
     endMs: atNightEnd(nightOf, daysUntilMonday).getTime(),
   };
+};
+
+/** Events running or starting inside the window. Those already under way count until they end. */
+export const filterEventsInWindow = <T extends { startsAtMs: number; endsAtMs: number }>(
+  events: T[],
+  window: TimeWindow
+): T[] =>
+  events.filter((event) => event.startsAtMs <= window.endMs && event.endsAtMs > window.startMs);
+
+/** Fewer events than this today, and the home screen shows the week instead */
+export const MIN_EVENTS_FOR_TODAY = 3;
+
+export type HomeScope = 'today' | 'week';
+
+export const chooseHomeScope = (eventsTodayCount: number): HomeScope =>
+  eventsTodayCount >= MIN_EVENTS_FOR_TODAY ? 'today' : 'week';
+
+const EVENING_STARTS_AT_HOUR = 17;
+
+/** The word for the rest of the day: "today" until the evening, then "tonight" */
+export const getTodayLabel = (now: Date): 'today' | 'tonight' => {
+  const hour = now.getHours();
+  return hour >= EVENING_STARTS_AT_HOUR || hour < NIGHT_ENDS_AT_HOUR ? 'tonight' : 'today';
 };
 
 const WALKING_MINUTES_PER_KM = 12;

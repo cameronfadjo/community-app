@@ -2,7 +2,8 @@
  * Script to add the starting set of activities (dancing, drag shows, ...)
  *
  * Only adds activities that don't exist yet, so it is safe to run again and
- * never overwrites edits an admin has made.
+ * never overwrites edits an admin has made. Retired activities are switched
+ * off, not deleted, so events already posted under them keep working.
  *
  * Usage:
  *   pnpm --filter @community/admin-dashboard seed:activities --dry-run
@@ -15,7 +16,7 @@
 
 import { readFileSync } from 'node:fs';
 import admin from 'firebase-admin';
-import { DEFAULT_ACTIVITIES } from '@community/types';
+import { DEFAULT_ACTIVITIES, RETIRED_ACTIVITY_IDS } from '@community/types';
 import { COLLECTIONS } from '@community/firebase';
 
 const dryRun = process.argv.includes('--dry-run');
@@ -26,6 +27,7 @@ const main = async () => {
     for (const activity of DEFAULT_ACTIVITIES) {
       console.log(`  ${activity.id.padEnd(30)} ${activity.label.padEnd(30)} ${activity.color}`);
     }
+    console.log(`\nWould switch off if present: ${RETIRED_ACTIVITY_IDS.join(', ')}`);
     return;
   }
 
@@ -62,7 +64,25 @@ const main = async () => {
     added += 1;
   }
 
-  console.log(`\n🎉 Done. Added ${added}, skipped ${DEFAULT_ACTIVITIES.length - added}.`);
+  let retired = 0;
+  for (const id of RETIRED_ACTIVITY_IDS) {
+    const ref = collection.doc(id);
+    const existing = await ref.get();
+    if (!existing.exists || existing.data()?.active === false) {
+      continue;
+    }
+
+    await ref.update({
+      active: false,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`  retired  ${existing.data()?.label ?? id}`);
+    retired += 1;
+  }
+
+  console.log(
+    `\n🎉 Done. Added ${added}, skipped ${DEFAULT_ACTIVITIES.length - added}, switched off ${retired}.`
+  );
 };
 
 main().catch((error) => {

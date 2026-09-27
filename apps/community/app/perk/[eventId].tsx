@@ -168,7 +168,7 @@ export default function PerkScreen() {
           <PrimaryButton
             title="See what else is on"
             variant="secondary"
-            onPress={() => router.replace('/(tabs)/tonight')}
+            onPress={() => router.replace('/(tabs)/whats-on')}
           />
         )}
       </View>

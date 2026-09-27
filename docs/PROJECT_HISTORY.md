@@ -156,7 +156,7 @@ a going-out app: pick an activity, see what's on, go.
 - **Activities are data.** They live in the `activities` collection and are
   managed by admins. A starting set of 26 is seeded by
   `pnpm --filter @community/admin-dashboard seed:activities`.
-- **Browsing needs no account.** The app opens to Tonight. Sign-in is asked
+- **Browsing needs no account.** The app opens to What's on. Sign-in is asked
   for only when unlocking a perk at the door.
 - **Partners post their own events** from the partner dashboard, with weekly
   repeat. Events publish immediately.

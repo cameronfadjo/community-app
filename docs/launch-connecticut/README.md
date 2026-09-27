@@ -13,15 +13,21 @@ a lead to confirm.
 | File | Rows | What it holds |
 |---|---|---|
 | `venues.csv` | 72 | Places where events happen: bars, cafes, community spaces, shops that host events, gyms |
-| `recurring-events.csv` | 64 | Recurring events for adults or all ages |
+| `recurring-events.csv` | 62 | Recurring events people can turn up to |
 | `annual-events.csv` | 10 | Once-a-year events |
 
 Each venue and event row has a `verified` column, set to `No`. Change it to
 `Yes` once someone at the venue or the organizer has confirmed the details.
 
 Left out on purpose, because the app is about going out: healthcare, mental
-health services, housing and food resources, salons, tattoo shops,
-photographers, wedding venues, college offices, and virtual resources.
+health services, support groups, housing and food resources, salons, tattoo
+shops, photographers, wedding venues, college offices, virtual resources, and
+anything you cannot simply turn up to (a chorus rehearsal that needs an
+audition, for example).
+
+Pride groups and community centers are in the lists as **hosts**. Their
+hangouts, game nights, and socials are events like any other. Their services
+are not listed.
 
 ## What the list shows
 
@@ -29,21 +35,21 @@ photographers, wedding venues, college offices, and virtual resources.
 
 | Schedule detail | Events |
 |---|---|
-| Day and time both stated | 24 |
+| Day and time both stated | 23 |
 | Day stated, time missing | 15 |
-| Neither stated | 25 |
+| Neither stated | 24 |
 
-Only the first group can be posted as it stands. The other 40 need a call,
+Only the first group can be posted as it stands. The other 39 need a call,
 an email, or a check of the organizer's website.
 
 ### How often events repeat
 
 | Pattern | Events |
 |---|---|
-| Weekly | 16 |
+| Weekly | 15 |
 | Monthly, on a set weekday such as "3rd Saturday" | 20 |
 | Every two weeks or twice a month | 2 |
-| Varies or not stated | 26 |
+| Varies or not stated | 25 |
 
 ### Where they are
 
@@ -51,7 +57,7 @@ an email, or a check of the organizer's website.
 |---|---|---|
 | Norwalk | 12 | 2 |
 | New Haven | 10 | 12 |
-| Hartford | 6 | 10 |
+| Hartford | 5 | 10 |
 | Stamford | 5 | 6 |
 | Middletown | 5 | 4 |
 | Putnam and Danielson | 6 | 3 |
@@ -61,45 +67,45 @@ runs most of its events, and one bar, Troupe 429, runs the rest.
 
 ### What this means for the app
 
-1. **"Tonight" will often be empty.** The 24 events with a full schedule come
-   to roughly 16 a week across the whole state, or about two a night. In any
-   one town, most nights have nothing. The home screen needs to fall back to
-   "this week" when tonight is thin.
-2. **Monthly repeats are the most common pattern, and the app can't post
-   them.** The posting form only repeats weekly. "Monthly on the 3rd Saturday"
-   is needed before seeding.
+1. **Most nights are quiet.** The events with a full schedule come to about
+   two a night across the whole state. In any one town, most nights have
+   nothing. The home screen now shows the week when fewer than three events
+   are on today.
+2. **Monthly repeats are the most common pattern.** The posting form now
+   repeats weekly, every two weeks, or monthly on a numbered weekday such as
+   the 3rd Saturday. For "1st and 3rd", post two monthly events.
 3. **Connecticut is driven, not walked.** Events are spread across towns 20
    to 60 minutes apart by car. "12 min walk" will rarely apply, and nudges
    currently skip anything more than 8 km away.
 4. **Many events are daytime.** Hangouts at 3 PM, a craft fair at noon, D&D
-   from noon. The app's wording leans on "tonight" and "night".
+   from noon. The home tab is now called "What's on", and the app says
+   "today" before 5 PM and "tonight" after.
 5. **Many hosts are groups, not venues.** Trans Haven, Triangle Community
    Center, and Bethel Pride host at libraries, cafes, and churches.
 6. **Bars are the thinnest part of the data.** Nine of the eleven bars have no
    schedule at all, only "frequent events, check their website".
 
-## Activities: comparison and suggested additions
+## Activities
 
-The app has 26 activities. 40 of the 64 events fit one of them. The other 24
-would be better served by something new; two of those also fit an existing
-activity.
+The app's activities are all things to go and do. The starting set has 32.
+Six were added for Connecticut, and "Support groups" was retired because it
+is a service, not a night out.
 
-### Suggested new activities
-
-| Activity | Events that need it | Examples |
+| Added activity | Events in the list | Examples |
 |---|---|---|
-| Community hangouts | 11 | Nonbinary Hangout, FEMinent Domain, Bicon Social Hour, Small Town Pride |
+| Hangouts | 11 | Nonbinary Hangout, FEMinent Domain, Bicon Social Hour |
 | Meetups and mixers | 6 | Beers & Queers, Pink Drink Social, Building the Rainbow CT |
 | Tabletop and role-playing | 5 | Dungeons & Dragons, Magic draft nights, Nerd Night |
-| Choirs and singing | 1 | Hartford Gay Men's Chorus |
 | Markets and fairs | 1 | Queer Community Craft Fair |
 | Watch parties | 0 with a schedule | Drag Race watch parties at Misfit Club and Blue Orchid |
 | Theater and performance | 0 with a schedule | TheaterWorks, Ivoryton Playhouse, Real Art Ways |
 
-"Community hangouts" is the important one. These are social spaces for a
-specific group, held monthly. They differ from the existing "Support groups":
-the directory describes them as places to hang out, and they are a large share
-of what is on in New Haven, Hartford, and Middletown.
+To add them to the live app, run the seed script again. It adds what is
+missing and switches off "Support groups":
+
+```bash
+pnpm --filter @community/admin-dashboard seed:activities
+```
 
 ### Existing activities with no events in the list
 
@@ -173,14 +179,14 @@ Changes the app needs first. Each is listed because the data requires it.
 
 | Change | Why |
 |---|---|
-| Monthly repeat, such as "3rd Saturday" | 20 of 64 events repeat this way |
-| Fall back to "this week" when tonight is thin | About two events a night statewide |
+| ~~Monthly repeat, such as "3rd Saturday"~~ Done | 20 events repeat this way |
+| ~~Fall back to "this week" when today is thin~~ Done | About two events a night statewide |
 | Choose a town, and show driving distance | Events are spread across the state |
 | Seed venues from a file, with addresses and map positions | 72 venues; only 4 have a street address in the source |
 | Let an admin post events on an organizer's behalf | Organizers don't have accounts yet |
 | Mark seeded events as unconfirmed, with their source | The details are unverified |
 | Let an organizer claim their event, and ask for removal | The directory offers removal to owners; the app should too |
-| New activities and tags from the sections above | 24 events don't fit the current activities |
+| ~~New activities~~ Done. Tags from the section above are still to do | The extra detail helps people choose |
 
 ### Stage 2: Confirm the first town
 
