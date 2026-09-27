@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
   const [isAdult, setIsAdult] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  const handleJoin = async () => {
+  const handleContinue = async () => {
     if (!isAdult) {
       setError(`Community is for people aged ${MINIMUM_USER_AGE} and over.`);
       return;
@@ -52,11 +52,11 @@ export default function WelcomeScreen() {
               }}
               error={error}
             />
-            <PrimaryButton title="Join Community" onPress={handleJoin} />
+            <PrimaryButton title="Continue" onPress={handleContinue} />
           </View>
 
           <Text style={styles.terms}>
-            By joining, you agree to our <LegalLinkText document="terms" /> and{' '}
+            By continuing, you agree to our <LegalLinkText document="terms" /> and{' '}
             <LegalLinkText document="privacy" />.
           </Text>
         </View>
