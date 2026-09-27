@@ -10,7 +10,11 @@ import {
 import { useAuth } from '../src/hooks';
 import { LoadingSpinner } from '../src/components';
 import { usePerkStore } from '../src/store/perkStore';
+import { useNotificationStore } from '../src/store/notificationStore';
+import { configureNotifications, onNotificationOpened } from '../src/services/notifications';
 import { COLORS } from '../src/constants/theme';
+
+configureNotifications();
 
 export default function RootLayout() {
   const { isAuthenticated, initialized } = useAuth();
@@ -39,6 +43,17 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, initialized, segments]);
 
+  // Refresh what is scheduled each time the app opens, and open the event
+  // when a nudge is tapped
+  useEffect(() => {
+    const { load, reschedule } = useNotificationStore.getState();
+    load().then(reschedule);
+
+    return onNotificationOpened((eventId) => {
+      router.push((eventId ? `/event/${eventId}` : '/(tabs)/tonight') as never);
+    });
+  }, []);
+
   // If the font fails to load, carry on with the system font
   if (!fontsLoaded && !fontError) {
     return <LoadingSpinner fullScreen message="Loading Community..." />;
@@ -55,6 +70,7 @@ export default function RootLayout() {
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="pick" options={{ presentation: 'modal' }} />
       <Stack.Screen name="account" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

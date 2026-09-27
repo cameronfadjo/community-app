@@ -7,6 +7,7 @@ import { Button } from '../src/components';
 import { useAuth } from '../src/hooks';
 import { useEventStore } from '../src/store/eventStore';
 import { usePerkStore } from '../src/store/perkStore';
+import { useNotificationStore } from '../src/store/notificationStore';
 import { sendVerificationEmail } from '../src/services/firebase/auth';
 import { getRedemptionState } from '../src/types';
 import { formatClock } from '../src/utils/events';
@@ -46,6 +47,7 @@ export default function AccountScreen() {
   const { user, profile, isEmailVerified, signOut, deleteAccount, loading } = useAuth();
   const usingSampleData = useEventStore((state) => state.usingSampleData);
   const { perks, loadMine } = usePerkStore();
+  const notificationsOn = useNotificationStore((state) => state.prefs.enabled);
 
   const userId = user?.uid ?? null;
   const [nowMs] = useState(Date.now());
@@ -222,6 +224,21 @@ export default function AccountScreen() {
             </View>
           </View>
         )}
+
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="bell-outline" size={22} color={COLORS.primaryDark} />
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>Nudges</Text>
+            <Text style={styles.rowMeta}>
+              {notificationsOn ? 'On' : 'Off'} · reminders when something is about to start
+            </Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
 
         <View>
           <Text style={styles.sectionTitle}>Your privacy</Text>

@@ -36,6 +36,9 @@ const addDistance = (events: EventListing[], near: Coordinates | null): EventWit
       : event
   );
 
+// Shared by callers that ask while a load is already under way
+let loadInFlight: Promise<void> | null = null;
+
 export const useEventStore = create<EventState>((set, get) => ({
   activities: [],
   tonightEvents: [],
@@ -52,37 +55,55 @@ export const useEventStore = create<EventState>((set, get) => ({
     });
   },
 
-  loadTonight: async () => {
-    set({ loading: true, error: null });
-    const { userLocation } = get();
-
-    let activities: Activity[] = [];
-    let events: EventWithDistance[] = [];
-    let error: string | null = null;
-
-    try {
-      [activities, events] = await Promise.all([
-        getActivities(),
-        getEventsTonight({}, userLocation),
-      ]);
-    } catch (e: any) {
-      console.error('[EventStore] Error loading tonight:', e);
-      error = "We couldn't load what's on. Pull down to try again.";
+  loadTonight: () => {
+    if (loadInFlight) {
+      return loadInFlight;
     }
 
-    // The starting set stands in until the activities collection is seeded
-    if (activities.length === 0) {
-      activities = buildSampleActivities();
-    }
+    const load = async () => {
+      set({ loading: true, error: null });
+      const { userLocation } = get();
 
-    // Development only: show sample events rather than an empty app
-    const usingSampleData = __DEV__ && events.length === 0;
-    if (usingSampleData) {
-      events = addDistance(buildSampleEvents(), userLocation);
-      error = null;
-    }
+      let activities: Activity[] = [];
+      let events: EventWithDistance[] = [];
+      let error: string | null = null;
 
-    set({ activities, tonightEvents: events, loading: false, loaded: true, error, usingSampleData });
+      try {
+        [activities, events] = await Promise.all([
+          getActivities(),
+          getEventsTonight({}, userLocation),
+        ]);
+      } catch (e: any) {
+        console.error('[EventStore] Error loading tonight:', e);
+        error = "We couldn't load what's on. Pull down to try again.";
+      }
+
+      // The starting set stands in until the activities collection is seeded
+      if (activities.length === 0) {
+        activities = buildSampleActivities();
+      }
+
+      // Development only: show sample events rather than an empty app
+      const usingSampleData = __DEV__ && events.length === 0;
+      if (usingSampleData) {
+        events = addDistance(buildSampleEvents(), userLocation);
+        error = null;
+      }
+
+      set({
+        activities,
+        tonightEvents: events,
+        loading: false,
+        loaded: true,
+        error,
+        usingSampleData,
+      });
+    };
+
+    loadInFlight = load().finally(() => {
+      loadInFlight = null;
+    });
+    return loadInFlight;
   },
 
   findEvent: async (eventId) => {
