@@ -172,7 +172,7 @@ a going-out app: pick an activity, see what's on, go.
 - The old offers system (claim codes, QR, offer analytics)
 - The approval step for new consumer accounts
 
-Venues and reviews still exist in Firestore and in the dashboards.
+Venues are still used: every event happens at one.
 
 ### Server functions
 
@@ -182,14 +182,44 @@ Venues and reviews still exist in Firestore and in the dashboards.
   configuration feature that no longer exists, and roles are granted with
   scripts instead.
 
+### Launch preparation (late September 2026)
+
+- The home tab became "What's on". It shows the week when fewer than three
+  events are on today.
+- Events can repeat weekly, every two weeks, or monthly on a numbered
+  weekday.
+- Activities were refocused on going out. Support groups were retired.
+- Every event is 18+ or 21+. The app asks people to confirm they are 18 or
+  older the first time it opens.
+- Terms and Privacy links were added, with a website to hold the pages.
+- Moderation moved to the admin dashboard. Partners only manage their own
+  events.
+- User records became private to their owner and admins.
+
+### Clean-up (September 27, 2026)
+
+Removed everything left over from features the app no longer has:
+
+- Reviews: dashboard pages, rules, Cloud Functions, indexes, and types
+- Venue ratings, which came from reviews
+- Venue submission by users; admins manage venues
+- Unused profile fields: bio, photo, favorites, subscription tier, verified
+- Photo upload helpers; storage rules are closed until a feature needs them
+- The `moderateUser` and `moderateVenue` functions, which nothing called
+- Old guides that described the earlier app
+
+The partner role script moved beside the admin one. Lint now runs on both
+dashboards and passes.
+
 ### Still open
 
-- Moderation pages in the partner dashboard should move to the admin dashboard
-- `'system'` venue creation bypass is still in `firestore.rules`
+- There is no screen for adding a venue. Venues must be added before
+  partners can post events.
 - Busy level ("Filling up") is not yet calculated from real arrivals
 - The Map tab is a nearest-first list; an interactive map needs native setup
 - Event photo upload
 - Push notifications
+- Google sign-in works in the browser only
 
 ---
 

@@ -38,6 +38,9 @@ jobs:
       - name: Type-check
         run: pnpm type-check
 
+      - name: Lint the dashboards
+        run: pnpm --filter @community/admin-dashboard --filter @community/partner-dashboard lint
+
       - name: Test
         run: pnpm test
 

@@ -64,7 +64,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.log('[AuthStore] No profile found in listener, creating one...');
             await createUserProfile({
               displayName: firebaseUser.displayName || 'User',
-              photoURL: firebaseUser.photoURL || undefined,
             });
             await new Promise((resolve) => setTimeout(resolve, 500));
             profile = await getCurrentUserProfile();
@@ -146,7 +145,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.log('[AuthStore] No profile found, creating new profile...');
         await createUserProfile({
           displayName: userCredential.user.displayName || 'Google User',
-          photoURL: userCredential.user.photoURL || undefined,
         });
 
         // Wait a moment for the profile to be created

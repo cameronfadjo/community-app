@@ -22,20 +22,8 @@ export const createUserProfile = async (userData: Partial<User>): Promise<void> 
     uid: currentUser.uid,
     email: currentUser.email || '',
     displayName: userData.displayName || currentUser.displayName || 'Anonymous',
-    bio: userData.bio || '',
-    verified: false,
     moderationStatus: 'approved',
-    subscriptionTier: 'free',
-    favorites: [],
   };
-
-  // Only add optional fields if they have values
-  if (userData.photoURL || currentUser.photoURL) {
-    userProfile.photoURL = userData.photoURL || currentUser.photoURL || undefined;
-  }
-  if (userData.location) {
-    userProfile.location = userData.location;
-  }
 
   await createDocument(COLLECTIONS.USERS, currentUser.uid, userProfile);
 };
@@ -66,7 +54,7 @@ export const updateUserProfile = async (
   updates: Partial<User>
 ): Promise<void> => {
   // Don't allow updating sensitive fields
-  const { uid, email, moderationStatus, verified, createdAt, ...allowedUpdates } = updates;
+  const { uid, email, moderationStatus, createdAt, ...allowedUpdates } = updates;
 
   await updateDocument(COLLECTIONS.USERS, userId, allowedUpdates);
 };

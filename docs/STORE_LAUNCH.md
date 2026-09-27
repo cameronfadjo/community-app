@@ -106,22 +106,12 @@ The sign in and sign up screens show "Continue with Google". Two problems:
 
 ### Leftover features from the earlier version
 
-`app.json` declares no camera, photo library, or microphone permission, and no plugin for them. Nothing had to be removed. No package for them is installed either.
+Removed on September 27, 2026: reviews (pages, rules, Cloud Functions, and
+indexes), photo upload helpers, venue submission by users, the unused
+profile fields, and the starter screen. Storage rules are closed until a
+feature needs them.
 
-The leftovers are in code, not in permissions:
-
-| Leftover | Where | Reachable from current screens? | Suggested action |
-| --- | --- | --- | --- |
-| Photo upload helpers using Firebase Storage | `apps/community/src/services/firebase/storage.ts` | No screen imports it directly. It is re-exported from `src/services/firebase/index.ts`. | Remove the file and the export. |
-| Firebase Storage client created at start up | `packages/firebase/src/client.ts` | Yes, it runs on start, but nothing uploads. | Leave for now. Remove when the dashboards no longer need it. |
-| Review Cloud Functions | `apps/community/functions/src/reviews/`, `triggers/updateVenueRating.ts` | Not called by the app. | Remove, or stop deploying them. |
-| `reviews` rules | `apps/community/firestore.rules` | Anyone can read reviews. Approved users can create them. | Close to `allow read, write: if false` unless a dashboard needs them. |
-| Venue submission by users | `firestore.rules`, `venues` create rule | Not in the app. | Remove the user path when you remove the seeding bypass. |
-| Extra profile fields | `functions/src/auth/onUserCreate.ts` writes `bio`, `photoURL`, `favorites`, `subscriptionTier`, `verified` | Not shown in the app. | Remove the unused fields. `subscriptionTier` suggests paid plans, which you do not have. |
-| `watchLocation` helper | `src/utils/location.ts` | Not called anywhere. | Remove. It is foreground only, so it is not a policy problem. |
-| Default starter screen | `apps/community/App.tsx` | Not used. The entry point is `expo-router/entry`. | Remove. |
-
-These are under paths another engineer is editing, so nothing was changed.
+`app.json` declares no camera, photo library, or microphone permission.
 
 ### What was changed in `app.json`
 
@@ -376,7 +366,7 @@ Project: `community-86792`.
 - [x] **In the repo**: Remove the temporary venue bypass in `apps/community/firestore.rules`. The rule `allow create: if request.resource.data.submittedBy == 'system' || ...` lets anyone, signed in or not, create a venue by setting `submittedBy` to `system`. Seed with the Admin SDK, which skips rules. **Done in the repo on September 27, 2026. Cameron: deploy the rules.**
 - [x] **In the repo**: Close the `users` read rule (done in the repo on September 27, 2026; Cameron: deploy the rules). Today `allow read` passes when `resource.data.moderationStatus == 'approved'`. Every account starts approved, so anyone, even without an account, can read any user's document, including the email. This breaks the "no public profile" promise shown in the app. Change it to owner or admin only.
 - [x] **In the repo**: Remove partner access to user records. `isPartnerOrAdmin()` lets any partner read and update every user. Make it admin only. **Done in the repo on September 27, 2026: user records are readable by their owner and admins only, and the Users page is no longer linked in the partner dashboard. Cameron: deploy the rules.**
-- [ ] **In the repo**: Move the moderation pages out of the partner dashboard. `apps/partner-dashboard/app/dashboard/users/page.tsx` shows user emails to any partner. The same area has `venues` and `reviews` moderation pages. Move them to `apps/admin-dashboard` and delete them from the partner dashboard.
+- [x] **In the repo**: Move the moderation pages out of the partner dashboard (done on September 27, 2026; the rules now keep venue and review moderation to admins, so Cameron: deploy the rules). `apps/partner-dashboard/app/dashboard/users/page.tsx` shows user emails to any partner. The same area has `venues` and `reviews` moderation pages. Move them to `apps/admin-dashboard` and delete them from the partner dashboard.
 - [ ] **In the repo**: Tighten `allow list: if true` on venues if unapproved venues must stay private.
 - [ ] **In the repo**: Close the `reviews` rules if reviews are gone.
 - [ ] **In the repo**: Review `apps/community/storage.rules`. If nothing uploads, deny all writes.

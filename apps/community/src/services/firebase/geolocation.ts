@@ -1,6 +1,4 @@
 import { GeoPoint } from 'firebase/firestore';
-import { queryDocuments, where } from './firestore';
-import { Venue } from '../../types';
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -59,45 +57,6 @@ export const getBoundingBox = (
     minLon: longitude - lonDelta,
     maxLon: longitude + lonDelta,
   };
-};
-
-/**
- * Query venues within a radius (simple bounding box approach)
- * For production, consider using GeoFirestore or similar library
- */
-export const queryVenuesNearby = async (
-  latitude: number,
-  longitude: number,
-  radiusKm: number = 50
-): Promise<Venue[]> => {
-  const bbox = getBoundingBox(latitude, longitude, radiusKm);
-
-  // Query venues within bounding box
-  // Note: This is a simplified approach. For production, use geohash queries
-  const venues = await queryDocuments<Venue>('venues', [
-    where('moderationStatus', '==', 'approved'),
-  ]);
-
-  // Filter by actual distance and sort
-  const venuesWithDistance = venues
-    .map((venue) => {
-      const venueLocation = venue.location.coordinates;
-      const distance = calculateDistance(
-        latitude,
-        longitude,
-        venueLocation.latitude,
-        venueLocation.longitude
-      );
-
-      return {
-        ...venue,
-        distance,
-      };
-    })
-    .filter((venue) => venue.distance <= radiusKm)
-    .sort((a, b) => a.distance - b.distance);
-
-  return venuesWithDistance;
 };
 
 /**

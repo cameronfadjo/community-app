@@ -1,26 +1,19 @@
-import type { Timestamp, GeoPoint } from 'firebase/firestore';
-import type { ModerationStatus, SubscriptionTier } from './common';
+import type { Timestamp } from 'firebase/firestore';
+import type { ModerationStatus } from './common';
 
 /**
- * Consumer user profile — represents a person using the Community App.
+ * Someone with an account in the Community App. Nobody has a public
+ * profile, so this holds only what signing in and perks need.
  */
 export interface User {
   uid: string;
   email: string;
+  /** Shown only to the person themselves */
   displayName: string;
-  photoURL?: string;
-  bio?: string;
-  location?: GeoPoint;
-  verified: boolean;
+  /** Accounts start approved. An admin can reject one to block it. */
   moderationStatus: ModerationStatus;
-  subscriptionTier: SubscriptionTier;
-  /** IDs of venues the user has favorited */
-  favorites: string[];
   /** When the person confirmed at sign-up that they are 18 or older */
   confirmedAdultAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
-
-/** Display-only subset of `User` (omits identifier). */
-export interface UserProfile extends Omit<User, 'uid'> {}
