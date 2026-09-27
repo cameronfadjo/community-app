@@ -66,6 +66,11 @@ export interface EventListing {
 
   /** Perk unlocked on arrival, if any */
   offerId?: string;
+  /** Denormalized from the offer. e.g. "Free drink" */
+  perkLabel?: string;
+
+  /** Anonymous crowd level, kept up to date from arrival counts */
+  busyLevel?: BusyLevel;
 
   status: EventStatus;
   /** Last time the organizer confirmed the details are still right */

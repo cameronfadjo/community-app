@@ -1,52 +1,74 @@
 // Theme constants for the Community app
-// Using a vibrant, inclusive color palette
+// Light, rounded, with the six rainbow flag colors assigned to activities
+
+import type { ActivityColor } from '../types';
 
 export const COLORS = {
-  // Primary brand colors (rich blue/teal palette)
-  primary: '#0EA5E9', // Sky Blue
-  primaryDark: '#0284C7',
-  primaryLight: '#7DD3FC',
+  // Primary: main buttons, links, time labels
+  primary: '#004DFF',
+  primaryDark: '#0040D6',
+  primaryLight: '#DEE8FF',
 
-  // Secondary colors
-  secondary: '#14B8A6', // Teal
-  secondaryDark: '#0D9488',
-  secondaryLight: '#5EEAD4',
+  // Secondary: busy level and confirmations
+  secondary: '#008026',
+  secondaryDark: '#006B20',
+  secondaryLight: '#DDF2E2',
 
-  // Accent colors
-  accent: '#06B6D4', // Cyan
-  accentDark: '#0891B2',
-  accentLight: '#67E8F9',
+  // Accent: perks
+  accent: '#750787',
+  accentDark: '#5C066B',
+  accentLight: '#EFDDF2',
 
   // Neutral colors
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8F9FA',
+  background: '#FFFDF8',
+  backgroundSecondary: '#F2EFE8',
   surface: '#FFFFFF',
-  surfaceVariant: '#F1F3F5',
+  surfaceVariant: '#F2EFE8',
 
   // Text colors
-  text: '#1A1A1A',
-  textSecondary: '#6C757D',
-  textTertiary: '#ADB5BD',
+  text: '#1B1B2F',
+  textSecondary: '#5B5B72',
+  textTertiary: '#8A8AA0',
   textInverse: '#FFFFFF',
 
   // Status colors
-  success: '#28A745',
-  warning: '#FFC107',
-  error: '#DC3545',
-  errorLight: '#F8D7DA',
-  info: '#17A2B8',
+  success: '#008026',
+  warning: '#B85C00',
+  error: '#C50202',
+  errorLight: '#FDE3E3',
+  info: '#0047E0',
 
   // Borders and dividers
-  border: '#DEE2E6',
-  divider: '#E9ECEF',
+  border: '#ECE8DF',
+  divider: '#ECE8DF',
 
   // Overlays
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
+  overlay: 'rgba(27, 27, 47, 0.5)',
+  overlayLight: 'rgba(27, 27, 47, 0.3)',
 
   // Feature-specific colors
-  featured: '#06B6D4',
-  premium: '#0EA5E9',
+  featured: '#EFDDF2',
+  premium: '#750787',
+};
+
+/**
+ * Each activity color as a pale tint (tile and photo fills) and a darker
+ * shade (icons and labels on the tint).
+ */
+export const ACTIVITY_PALETTE: Record<ActivityColor, { tint: string; shade: string }> = {
+  red: { tint: '#FDE3E3', shade: '#C50202' },
+  orange: { tint: '#FFEBD2', shade: '#B85C00' },
+  yellow: { tint: '#FFF4B0', shade: '#7A5E00' },
+  green: { tint: '#DDF2E2', shade: '#008026' },
+  blue: { tint: '#DEE8FF', shade: '#0047E0' },
+  violet: { tint: '#EFDDF2', shade: '#750787' },
+};
+
+export const FONTS = {
+  regular: 'Nunito_600SemiBold',
+  medium: 'Nunito_700Bold',
+  bold: 'Nunito_800ExtraBold',
+  black: 'Nunito_900Black',
 };
 
 export const SPACING = {
@@ -124,6 +146,8 @@ export const LAYOUT = {
 
 export default {
   COLORS,
+  ACTIVITY_PALETTE,
+  FONTS,
   SPACING,
   BORDER_RADIUS,
   FONT_SIZES,

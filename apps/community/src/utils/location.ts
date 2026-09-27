@@ -153,6 +153,7 @@ export const openDirections = (latitude: number, longitude: number, label?: stri
   const url = Platform.select({
     ios: `${scheme}${label || 'Location'}@${latLng}`,
     android: `${scheme}${latLng}(${label || 'Location'})`,
+    default: `https://www.google.com/maps/dir/?api=1&destination=${latLng}`,
   });
 
   if (url) {

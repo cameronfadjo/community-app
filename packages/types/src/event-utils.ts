@@ -3,7 +3,7 @@
  * runs the same in the Expo app, the dashboards, and Cloud Functions.
  */
 
-import type { EventFilters, EventListing } from './event';
+import type { BusyLevel, EventFilters, EventListing, EventTags } from './event';
 
 export const STARTING_SOON_MINUTES = 60;
 
@@ -107,4 +107,109 @@ export const countEventsByActivity = (
     }
   }
   return counts;
+};
+
+export type WhenOption = 'tonight' | 'tomorrow' | 'weekend';
+
+const atNightEnd = (date: Date, daysLater: number): Date => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + daysLater);
+  result.setHours(NIGHT_ENDS_AT_HOUR, 0, 0, 0);
+  return result;
+};
+
+/**
+ * The time range behind each "when" choice. Days run from 4 AM to 4 AM, so
+ * the small hours of Saturday still belong to Friday night.
+ */
+export const getWhenWindow = (when: WhenOption, now: Date): TimeWindow => {
+  const tonight = getTonightWindow(now);
+  if (when === 'tonight') {
+    return tonight;
+  }
+
+  if (when === 'tomorrow') {
+    const start = new Date(tonight.endMs);
+    return { startMs: start.getTime(), endMs: atNightEnd(start, 1).getTime() };
+  }
+
+  // The calendar day this night belongs to
+  const nightOf = new Date(now);
+  nightOf.setHours(nightOf.getHours() - NIGHT_ENDS_AT_HOUR);
+  const day = nightOf.getDay();
+  const FRIDAY = 5;
+
+  const daysUntilMonday = day === 0 ? 1 : 8 - day;
+  const isWeekend = day === 0 || day >= FRIDAY;
+  if (isWeekend) {
+    return { startMs: now.getTime(), endMs: atNightEnd(nightOf, daysUntilMonday).getTime() };
+  }
+
+  return {
+    startMs: atNightEnd(nightOf, FRIDAY - day).getTime(),
+    endMs: atNightEnd(nightOf, daysUntilMonday).getTime(),
+  };
+};
+
+const WALKING_MINUTES_PER_KM = 12;
+const LONGEST_WALK_MINUTES = 30;
+const MILES_PER_KM = 0.621371;
+
+/** "4 min walk" for short hops, miles once it is too far to walk. */
+export const formatDistanceLabel = (distanceKm: number): string => {
+  const minutes = Math.max(1, Math.round(distanceKm * WALKING_MINUTES_PER_KM));
+  if (minutes <= LONGEST_WALK_MINUTES) {
+    return `${minutes} min walk`;
+  }
+
+  const miles = distanceKm * MILES_PER_KM;
+  return miles < 10 ? `${miles.toFixed(1)} mi` : `${Math.round(miles)} mi`;
+};
+
+export interface PickCandidate {
+  id: string;
+  startsAtMs: number;
+  endsAtMs: number;
+  distanceKm?: number;
+  perkLabel?: string;
+  busyLevel?: BusyLevel;
+  tags: EventTags;
+}
+
+// Not worth sending someone to an event that is nearly over
+const MINIMUM_MINUTES_LEFT = 30;
+
+const scoreForPick = (event: PickCandidate, nowMs: number): number => {
+  const timing = getEventTiming(event.startsAtMs, event.endsAtMs, nowMs);
+
+  let score = 0;
+  if (timing.state === 'on_now') {
+    score += 40;
+  } else if (timing.state === 'starting_soon') {
+    score += 50 - timing.minutesUntilStart / 6;
+  } else {
+    score += Math.max(0, 40 - (timing.minutesUntilStart - STARTING_SOON_MINUTES) / 6);
+  }
+
+  score += event.distanceKm === undefined ? 15 : Math.max(0, 30 - event.distanceKm * 6);
+
+  if (event.tags.goodForSolo) score += 8;
+  if (event.perkLabel) score += 8;
+  if (event.busyLevel === 'filling_up') score += 8;
+  if (event.busyLevel === 'packed') score += 4;
+
+  return score;
+};
+
+/**
+ * Orders events for "Just pick for me", best first. Favors what is starting
+ * soon and close by, with a nudge for perks, solo-friendly events, and a
+ * room that is filling up.
+ */
+export const rankEventsForPick = <T extends PickCandidate>(events: T[], nowMs: number): T[] => {
+  return events
+    .filter((event) => event.endsAtMs - nowMs >= MINIMUM_MINUTES_LEFT * MS_PER_MINUTE)
+    .map((event) => ({ event, score: scoreForPick(event, nowMs) }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ event }) => event);
 };

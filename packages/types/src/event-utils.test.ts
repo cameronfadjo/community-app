@@ -3,9 +3,12 @@ import {
   STARTING_SOON_MINUTES,
   countEventsByActivity,
   expandWeeklyRecurrence,
+  formatDistanceLabel,
   getEventTiming,
   getTonightWindow,
+  getWhenWindow,
   matchesEventFilters,
+  rankEventsForPick,
 } from './event-utils';
 import { ACTIVITY_COLORS, DEFAULT_ACTIVITIES, activityColorForIndex } from './activity';
 
@@ -180,5 +183,138 @@ describe('countEventsByActivity', () => {
 
   it('returns an empty object when there are no events', () => {
     expect(countEventsByActivity([])).toEqual({});
+  });
+});
+
+describe('getWhenWindow', () => {
+  it('uses the tonight window for tonight', () => {
+    const now = new Date(2026, 8, 25, 21, 0);
+    expect(getWhenWindow('tonight', now)).toEqual(getTonightWindow(now));
+  });
+
+  it('starts tomorrow when tonight ends and lasts a day', () => {
+    const now = new Date(2026, 8, 25, 21, 0); // Friday
+    const window = getWhenWindow('tomorrow', now);
+    expect(new Date(window.startMs)).toEqual(new Date(2026, 8, 26, 4, 0));
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 8, 27, 4, 0));
+  });
+
+  it('treats 1 AM Saturday as still Friday night when finding tomorrow', () => {
+    const now = new Date(2026, 8, 26, 1, 0);
+    const window = getWhenWindow('tomorrow', now);
+    expect(new Date(window.startMs)).toEqual(new Date(2026, 8, 26, 4, 0));
+  });
+
+  it('runs the weekend from Friday 4 AM to Monday 4 AM when asked midweek', () => {
+    const now = new Date(2026, 8, 23, 12, 0); // Wednesday
+    const window = getWhenWindow('weekend', now);
+    expect(new Date(window.startMs)).toEqual(new Date(2026, 8, 25, 4, 0));
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 8, 28, 4, 0));
+  });
+
+  it('starts the weekend now when it is already under way', () => {
+    const now = new Date(2026, 8, 26, 15, 0); // Saturday
+    const window = getWhenWindow('weekend', now);
+    expect(window.startMs).toBe(now.getTime());
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 8, 28, 4, 0));
+  });
+
+  it('counts early Monday morning as the end of the weekend', () => {
+    const now = new Date(2026, 8, 28, 2, 0); // Monday 2 AM
+    const window = getWhenWindow('weekend', now);
+    expect(window.startMs).toBe(now.getTime());
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 8, 28, 4, 0));
+  });
+});
+
+describe('formatDistanceLabel', () => {
+  it('shows walking minutes for short distances', () => {
+    expect(formatDistanceLabel(0.33)).toBe('4 min walk');
+    expect(formatDistanceLabel(1)).toBe('12 min walk');
+  });
+
+  it('never says 0 min', () => {
+    expect(formatDistanceLabel(0.01)).toBe('1 min walk');
+  });
+
+  it('switches to miles beyond a 30 minute walk', () => {
+    expect(formatDistanceLabel(2.5)).toBe('30 min walk');
+    expect(formatDistanceLabel(3.2)).toBe('2.0 mi');
+    expect(formatDistanceLabel(20)).toBe('12 mi');
+  });
+});
+
+describe('rankEventsForPick', () => {
+  const now = new Date(2026, 8, 25, 21, 42).getTime();
+  const base = {
+    coverCents: 0,
+    tags: {
+      goodForSolo: false,
+      firstTimersWelcome: false,
+      alcoholFree: false,
+      stepFreeEntry: false,
+      minimumAge: 0 as const,
+    },
+  };
+  const at = (minutesFromNow: number, durationMinutes = 120) => ({
+    startsAtMs: now + minutesFromNow * MIN,
+    endsAtMs: now + (minutesFromNow + durationMinutes) * MIN,
+  });
+
+  it('leaves out events that have ended or are about to', () => {
+    const ranked = rankEventsForPick(
+      [
+        { id: 'over', ...base, ...at(-180, 120) },
+        { id: 'closing', ...base, ...at(-100, 120) },
+        { id: 'good', ...base, ...at(20) },
+      ],
+      now
+    );
+    expect(ranked.map((e) => e.id)).toEqual(['good']);
+  });
+
+  it('prefers something starting soon over something hours away', () => {
+    const ranked = rankEventsForPick(
+      [
+        { id: 'later', ...base, ...at(200) },
+        { id: 'soon', ...base, ...at(18) },
+      ],
+      now
+    );
+    expect(ranked[0]!.id).toBe('soon');
+  });
+
+  it('prefers the closer of two similar events', () => {
+    const ranked = rankEventsForPick(
+      [
+        { id: 'far', ...base, ...at(18), distanceKm: 4 },
+        { id: 'near', ...base, ...at(18), distanceKm: 0.5 },
+      ],
+      now
+    );
+    expect(ranked[0]!.id).toBe('near');
+  });
+
+  it('gives a boost for a perk, going solo, and a room that is filling up', () => {
+    const ranked = rankEventsForPick(
+      [
+        { id: 'plain', ...base, ...at(18), distanceKm: 1 },
+        {
+          id: 'extras',
+          ...base,
+          ...at(18),
+          distanceKm: 1,
+          perkLabel: 'Free drink',
+          busyLevel: 'filling_up' as const,
+          tags: { ...base.tags, goodForSolo: true },
+        },
+      ],
+      now
+    );
+    expect(ranked[0]!.id).toBe('extras');
+  });
+
+  it('returns an empty list when nothing is on', () => {
+    expect(rankEventsForPick([], now)).toEqual([]);
   });
 });

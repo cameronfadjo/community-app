@@ -1,43 +1,42 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import {
+  useFonts,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+} from '@expo-google-fonts/nunito';
 import { useAuth } from '../src/hooks';
 import { LoadingSpinner } from '../src/components';
+import { COLORS } from '../src/constants/theme';
 
 export default function RootLayout() {
-  const { isAuthenticated, isApproved, isPending, isRejected, initialized } = useAuth();
+  const { isAuthenticated, initialized } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
+  const [fontsLoaded, fontError] = useFonts({
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+  });
+
+  // Browsing is open to everyone. Signing in is only needed for perks, so the
+  // one redirect left is moving signed-in people off the sign-in screens.
   useEffect(() => {
     if (!initialized) {
       return;
     }
 
-    const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
-
-    if (!isAuthenticated) {
-      // Not authenticated - redirect to login
-      if (!inAuthGroup) {
-        router.replace('/auth/login');
-      }
-    } else {
-      // Authenticated - check moderation status
-      if (isPending || isRejected) {
-        // Pending or rejected moderation - show moderation screen
-        if ((segments as string[])[1] !== 'moderation-pending') {
-          router.replace('/auth/moderation-pending');
-        }
-      } else if (isApproved) {
-        // Approved - allow access to main app
-        if (inAuthGroup) {
-          router.replace('/(tabs)/explore');
-        }
-      }
+    if (isAuthenticated && segments[0] === 'auth') {
+      router.replace('/(tabs)/tonight');
     }
-  }, [isAuthenticated, isApproved, isPending, isRejected, initialized, segments]);
+  }, [isAuthenticated, initialized, segments]);
 
-  if (!initialized) {
+  // If the font fails to load, carry on with the system font
+  if (!fontsLoaded && !fontError) {
     return <LoadingSpinner fullScreen message="Loading Community..." />;
   }
 
@@ -45,11 +44,12 @@ export default function RootLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
+        contentStyle: { backgroundColor: COLORS.background },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
+      <Stack.Screen name="pick" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
