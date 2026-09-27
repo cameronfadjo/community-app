@@ -23,6 +23,7 @@ import {
   DEFAULT_ACTIVITIES,
   RETIRED_ACTIVITY_IDS,
   activityColorForIndex,
+  hasLongWord,
 } from './activity';
 
 const MIN = 60 * 1000;
@@ -152,6 +153,33 @@ describe('formatMinimumAge', () => {
   it('never shows an event as open to under-18s, whatever was stored', () => {
     expect(formatMinimumAge(0)).toBe('18+');
     expect(formatMinimumAge(undefined)).toBe('18+');
+  });
+});
+
+describe('hasLongWord', () => {
+  it('spots a word too long for a tile at full size', () => {
+    expect(hasLongWord('Theater and performance')).toBe(true);
+  });
+
+  it('lets words that fit through', () => {
+    expect(hasLongWord('Cabaret and burlesque')).toBe(false);
+    expect(hasLongWord('Classes and workshops')).toBe(false);
+    expect(hasLongWord('Dancing')).toBe(false);
+  });
+
+  it('goes by how wide the letters are, not only how many there are', () => {
+    // Ten letters each: one is mostly narrow letters, the other starts with a wide one
+    expect(hasLongWord('Everything')).toBe(false);
+    expect(hasLongWord('Wednesdays')).toBe(true);
+  });
+
+  it('counts each part of a hyphenated word, since it can break there', () => {
+    expect(hasLongWord('Tabletop and role-playing')).toBe(false);
+  });
+
+  it('knows which of the starting activities need it', () => {
+    const long = DEFAULT_ACTIVITIES.filter((activity) => hasLongWord(activity.label));
+    expect(long.map((activity) => activity.id)).toEqual(['theater-and-performance']);
   });
 });
 
