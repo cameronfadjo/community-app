@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import {
   useFonts,
@@ -11,6 +12,8 @@ import { useAuth } from '../src/hooks';
 import { LoadingSpinner } from '../src/components';
 import { usePerkStore } from '../src/store/perkStore';
 import { useNotificationStore } from '../src/store/notificationStore';
+import { useEventStore } from '../src/store/eventStore';
+import { useSavedStore } from '../src/store/savedStore';
 import { useWelcomeStore } from '../src/store/welcomeStore';
 import { needsAgeConfirmation } from '../src/types';
 import { configureNotifications, onNotificationOpened } from '../src/services/notifications';
@@ -65,14 +68,43 @@ export default function RootLayout() {
   }, [isAuthenticated, initialized, segments]);
 
   // Refresh what is scheduled each time the app opens, and open the event
-  // when a nudge is tapped
+  // when a nudge or a reminder is tapped
   useEffect(() => {
-    const { load, reschedule } = useNotificationStore.getState();
-    load().then(reschedule);
+    const prepare = async () => {
+      const notifications = useNotificationStore.getState();
+      const saved = useSavedStore.getState();
+      await Promise.all([notifications.load(), saved.load()]);
 
-    return onNotificationOpened((eventId) => {
+      // A host may have moved or cancelled something that was saved. The
+      // events are the ones the home screen loads, so this costs nothing more.
+      if (useSavedStore.getState().saved.length > 0) {
+        await useEventStore.getState().loadTonight();
+        await saved.refresh();
+      }
+      await notifications.reschedule();
+    };
+    prepare().catch((e) => console.error('[App] Error setting up reminders:', e));
+
+    // Coming back from the phone's settings, where notifications may have
+    // been allowed or turned off
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        const notifications = useNotificationStore.getState();
+        notifications
+          .checkPermission()
+          .then(notifications.reschedule)
+          .catch((e) => console.error('[App] Error setting up reminders:', e));
+      }
+    });
+
+    const stopListening = onNotificationOpened((eventId) => {
       router.push((eventId ? `/event/${eventId}` : '/(tabs)/whats-on') as never);
     });
+
+    return () => {
+      appState.remove();
+      stopListening();
+    };
   }, []);
 
   if (!fontsReady || !welcomeLoaded) {

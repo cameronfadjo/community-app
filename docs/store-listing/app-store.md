@@ -50,12 +50,16 @@ Limit: 170 characters. Can be changed without a new build.
 > UNLOCK A PERK WHEN YOU ARRIVE
 > Some events come with a perk from the venue, such as a free drink. When you get there, tap "I'm here" and show your phone at the bar or the door.
 >
+> LOOK AHEAD AND SAVE
+> See what's on today, this week, or this month. Save anything you'd like to go to, and get a reminder the day before.
+>
 > NO ACCOUNT NEEDED TO BROWSE
 > Open the app and look around. You only need an account to unlock perks.
 >
 > PRIVATE BY DESIGN
 > - No public profile. Other people using the app can't see you.
 > - Your location is checked on your phone and not saved.
+> - What you save stays on your phone. Nobody else can see it.
 > - Reminders are worked out on your phone. What you follow stays with you.
 > - No ads. No tracking across other apps.
 > - Delete your account at any time, in the app.

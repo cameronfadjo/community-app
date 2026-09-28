@@ -33,10 +33,16 @@ const PROMISES: Array<{ icon: IconName; title: string; detail: string }> = [
       'We keep a record of perks you unlock, so each one is used once. It is deleted 30 days after the event. Venues see totals, never who.',
   },
   {
+    icon: 'bookmark-outline',
+    title: 'What you save stays on your phone',
+    detail:
+      'Your saved list and its reminders are kept on this phone and nowhere else. Nobody can see what you plan to go to.',
+  },
+  {
     icon: 'counter',
     title: 'Counted, not tracked',
     detail:
-      'We count how often an event is looked at, so hosts know what works. A count is only a number. It carries nothing about you.',
+      'We count how often an event is looked at or saved, so hosts know what works. A count is only a number. It carries nothing about you.',
   },
 ];
 

@@ -238,6 +238,18 @@ dashboards and passes.
 - The app can now look for a perk someone hasn't unlocked yet without
   being refused.
 
+### Looking ahead and saving (September 27, 2026)
+
+- The home screen can show today, this week, or this month (the next 30
+  days). The month is loaded only when someone asks for it.
+- Lists that cover more than one day have a heading for each day.
+- People can save an event. The saved list is a fourth tab, and it stays
+  on the phone: nothing about who saved what reaches the server.
+- A reminder comes the day before a saved event, or two hours before if it
+  was saved later than that. Reminders are set on the phone.
+- A repeating event is saved one date at a time.
+- Hosts see how many times an event was saved, as an anonymous count.
+
 ### Still open
 
 - Venues loaded from the Connecticut list need their addresses and map

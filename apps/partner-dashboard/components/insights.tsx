@@ -114,6 +114,7 @@ export function CountsTable({
     name: string;
     note: string;
     views: number;
+    saves: number;
     directions: number;
     perkViews: number;
     perkUnlocked: number;
@@ -135,6 +136,7 @@ export function CountsTable({
               {firstHeading}
             </th>
             <th scope="col" className={heading}>Views</th>
+            <th scope="col" className={heading}>Saved</th>
             <th scope="col" className={heading}>Directions</th>
             <th scope="col" className={heading}>Went for perk</th>
             <th scope="col" className={heading}>Unlocked</th>
@@ -149,6 +151,7 @@ export function CountsTable({
                 <span className="block text-gray-600">{row.note}</span>
               </th>
               <td className={number}>{row.views}</td>
+              <td className={number}>{row.saves}</td>
               <td className={number}>{row.directions}</td>
               <td className={number}>{row.perkViews}</td>
               <td className={number}>{row.perkUnlocked}</td>

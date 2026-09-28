@@ -504,6 +504,21 @@ describe('getWhenWindow for the week', () => {
   });
 });
 
+describe('getWhenWindow for the month', () => {
+  it('runs from now until the night ends thirty days later', () => {
+    const now = new Date(2026, 8, 23, 12, 0);
+    const window = getWhenWindow('month', now);
+    expect(window.startMs).toBe(now.getTime());
+    expect(new Date(window.endMs)).toEqual(new Date(2026, 9, 23, 4, 0));
+  });
+
+  it('counts the small hours as the night before', () => {
+    // 1 AM on Thursday is still Wednesday night
+    const now = new Date(2026, 8, 24, 1, 0);
+    expect(new Date(getWhenWindow('month', now).endMs)).toEqual(new Date(2026, 9, 23, 4, 0));
+  });
+});
+
 describe('filterEventsInWindow', () => {
   const window = { startMs: 1000, endMs: 2000 };
 

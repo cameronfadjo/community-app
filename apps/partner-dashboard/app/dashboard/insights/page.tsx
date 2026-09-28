@@ -81,6 +81,7 @@ export default function InsightsPage() {
     const byHour = Array.from({ length: 24 }, () => 0);
     const byDay = new Map<string, number>();
     let views = 0;
+    let saves = 0;
     let directions = 0;
     let perkViews = 0;
     let perkUnlocked = 0;
@@ -88,6 +89,7 @@ export default function InsightsPage() {
 
     for (const { summary, perks } of shown) {
       views += summary.views;
+      saves += summary.saves;
       directions += summary.directions;
       perkViews += summary.perkViews;
       perkUnlocked += perks.unlocked;
@@ -102,6 +104,7 @@ export default function InsightsPage() {
 
     return {
       views,
+      saves,
       directions,
       perkViews,
       perkUnlocked,
@@ -122,6 +125,7 @@ export default function InsightsPage() {
           venueId: event.venueId,
           venueName: event.venueName,
           views: summary.views,
+          saves: summary.saves,
           directions: summary.directions,
           perkViews: summary.perkViews,
           perkUnlocked: perks.unlocked,
@@ -183,7 +187,9 @@ export default function InsightsPage() {
           <section className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">From seeing it to turning up</h2>
             <p className="text-sm text-gray-600 mb-5">
-              Each phone is counted once per event per day.
+              Each phone is counted once per event per day. Saved counts how many times people
+              saved the event to come back to. It stays the same if someone later takes it off
+              their list, and a saved list never leaves the phone it is on.
             </p>
             <Funnel steps={buildFunnel(totals)} />
           </section>
@@ -245,6 +251,7 @@ export default function InsightsPage() {
                     name: event.title,
                     note: `${format(event.startsAt.toDate(), 'EEE, MMM d')} · ${event.venueName}`,
                     views: summary.views,
+                    saves: summary.saves,
                     directions: summary.directions,
                     perkViews: summary.perkViews,
                     perkUnlocked: perks.unlocked,

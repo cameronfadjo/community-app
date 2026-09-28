@@ -1,8 +1,10 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ActivityColor, EventTags, formatDistanceLabel } from '../../types';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ActivityColor, EventTags, formatDistanceLabel, isSaved } from '../../types';
 import { EventWithDistance } from '../../services/api/events';
 import { formatClock, formatCover, formatTimingBadge, getTimingFor, isUnconfirmed } from '../../utils/events';
+import { useSavedStore } from '../../store/savedStore';
 import { ACTIVITY_PALETTE, COLORS, FONTS } from '../../constants/theme';
 import { ActivityIcon } from './ActivityIcon';
 import { BusyIndicator } from './BusyIndicator';
@@ -24,10 +26,19 @@ interface EventCardProps {
   color: ActivityColor;
   icon: string;
   onPress: () => void;
+  /** True under a heading that already names the day */
+  dayShown?: boolean;
 }
 
 /** Full-width event listing for activity lists */
-export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon, onPress }) => {
+export const EventCard: React.FC<EventCardProps> = ({
+  event,
+  nowMs,
+  color,
+  icon,
+  onPress,
+  dayShown = false,
+}) => {
   const palette = ACTIVITY_PALETTE[color];
   const image = event.images[0];
   const timing = getTimingFor(event, nowMs);
@@ -49,6 +60,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon,
 
   const tagLabels = getTagLabels(event.tags, event.audience).slice(0, 3);
   const unconfirmed = isUnconfirmed(event);
+  const saved = useSavedStore((state) => isSaved(state.saved, event.id));
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9} accessibilityRole="button">
@@ -61,7 +73,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon,
 
         <View style={[styles.badge, styles.badgeLeft]}>
           <Text style={[styles.badgeText, isLive && styles.badgeTextLive]}>
-            {formatTimingBadge(event, nowMs)}
+            {formatTimingBadge(event, nowMs, { dayShown })}
           </Text>
         </View>
 
@@ -73,9 +85,19 @@ export const EventCard: React.FC<EventCardProps> = ({ event, nowMs, color, icon,
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1}>
-          {event.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {event.title}
+          </Text>
+          {saved && (
+            <MaterialCommunityIcons
+              name="bookmark"
+              size={20}
+              color={COLORS.primaryDark}
+              accessibilityLabel="Saved"
+            />
+          )}
+        </View>
         <Text style={styles.meta} numberOfLines={2}>
           {meta}
         </Text>
@@ -134,11 +156,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
   title: {
+    flex: 1,
     fontFamily: FONTS.bold,
     fontSize: 19,
     color: COLORS.text,
-    marginBottom: 2,
   },
   meta: {
     fontFamily: FONTS.regular,

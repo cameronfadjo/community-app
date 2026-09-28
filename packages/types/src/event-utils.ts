@@ -182,7 +182,10 @@ export const countEventsByActivity = (
   return counts;
 };
 
-export type WhenOption = 'tonight' | 'tomorrow' | 'weekend' | 'week';
+export type WhenOption = 'tonight' | 'tomorrow' | 'weekend' | 'week' | 'month';
+
+/** How far "this month" looks ahead */
+export const DAYS_PER_MONTH_AHEAD = 30;
 
 const atNightEnd = (date: Date, daysLater: number): Date => {
   const result = new Date(date);
@@ -212,6 +215,9 @@ export const getWhenWindow = (when: WhenOption, now: Date): TimeWindow => {
 
   if (when === 'week') {
     return { startMs: now.getTime(), endMs: atNightEnd(nightOf, DAYS_PER_WEEK).getTime() };
+  }
+  if (when === 'month') {
+    return { startMs: now.getTime(), endMs: atNightEnd(nightOf, DAYS_PER_MONTH_AHEAD).getTime() };
   }
 
   const day = nightOf.getDay();
@@ -253,7 +259,7 @@ export const isStillFresh = (loadedAtMs: number | null, nowMs: number, maxAgeMs:
 /** Fewer events than this today, and the home screen shows the week instead */
 export const MIN_EVENTS_FOR_TODAY = 3;
 
-export type HomeScope = 'today' | 'week';
+export type HomeScope = 'today' | 'week' | 'month';
 
 export const chooseHomeScope = (eventsTodayCount: number): HomeScope =>
   eventsTodayCount >= MIN_EVENTS_FOR_TODAY ? 'today' : 'week';

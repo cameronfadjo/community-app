@@ -23,7 +23,7 @@ pnpm --filter @community/rules-tests test:rules
 
 | File | Covers |
 |---|---|
-| `signals.test.ts` | Anonymous counts: adding one, and everything else being refused |
+| `signals.test.ts` | Anonymous counts, including saves: adding one, and everything else being refused |
 | `perks.test.ts` | Unlocking and redeeming a perk, and who can see it |
 | `events.test.ts` | Posting, editing, and handing over events |
 | `venues.test.ts` | Adding, verifying, and approving venues |
